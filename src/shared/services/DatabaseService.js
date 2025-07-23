@@ -262,6 +262,33 @@ export class DatabaseService {
     return newQuote
   }
 
+  static updateQuote(id, updates) {
+    const quotes = this.getQuotes()
+    const index = quotes.findIndex(q => q.id === id)
+    if (index !== -1) {
+      quotes[index] = {
+        ...quotes[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('quotes', quotes)
+      return quotes[index]
+    }
+    return null
+  }
+
+  static deleteQuote(id) {
+    const quotes = this.getQuotes()
+    const filtered = quotes.filter(q => q.id !== id)
+    this.setItem('quotes', filtered)
+    return true
+  }
+
+  static getQuote(id) {
+    const quotes = this.getQuotes()
+    return quotes.find(q => q.id === id) || null
+  }
+
   static generateQuoteNumber() {
     const prefix = this.getSetting('quote_prefix') || 'DEV'
     const nextNumber = this.getSetting('next_quote_number') || '1'
@@ -343,4 +370,3 @@ export class DatabaseService {
     return this.createDefaultData()
   }
 }
-
