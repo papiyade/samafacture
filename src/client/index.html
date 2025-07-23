@@ -121,7 +121,76 @@
                         </button>
                     </div>
                     <div id="invoice-form-content">
-                        <p class="text-gray-600">Formulaire de facture en cours de développement...</p>
+                        <form id="invoice-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Client *</label>
+                                    <select id="invoice-client" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Sélectionner un client</option>
+                                    </select>
+                                    <div id="invoice-client-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Date *</label>
+                                    <input type="date" id="invoice-date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <div id="invoice-date-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Date d'échéance</label>
+                                    <input type="date" id="invoice-due-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Statut</label>
+                                    <select id="invoice-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="draft">Brouillon</option>
+                                        <option value="sent">Envoyée</option>
+                                        <option value="paid">Payée</option>
+                                        <option value="overdue">En retard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Articles</label>
+                                    <button type="button" id="add-invoice-item" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        + Ajouter un article
+                                    </button>
+                                </div>
+                                <div id="invoice-items" class="space-y-2">
+                                    <!-- Items will be added dynamically -->
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Sous-total</label>
+                                    <input type="number" id="invoice-subtotal" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">TVA (%)</label>
+                                    <input type="number" id="invoice-tax-rate" value="18" min="0" max="100" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Total</label>
+                                    <input type="number" id="invoice-total" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm font-semibold">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                                <textarea id="invoice-notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" onclick="window.hideModal('invoice-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                                    Annuler
+                                </button>
+                                <button type="submit" id="invoice-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -138,7 +207,77 @@
                         </button>
                     </div>
                     <div id="quote-form-content">
-                        <p class="text-gray-600">Formulaire de devis en cours de développement...</p>
+                        <form id="quote-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Client *</label>
+                                    <select id="quote-client" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Sélectionner un client</option>
+                                    </select>
+                                    <div id="quote-client-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Date *</label>
+                                    <input type="date" id="quote-date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <div id="quote-date-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Valide jusqu'au</label>
+                                    <input type="date" id="quote-valid-until" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Statut</label>
+                                    <select id="quote-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="draft">Brouillon</option>
+                                        <option value="sent">Envoyé</option>
+                                        <option value="accepted">Accepté</option>
+                                        <option value="rejected">Rejeté</option>
+                                        <option value="expired">Expiré</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Articles</label>
+                                    <button type="button" id="add-quote-item" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        + Ajouter un article
+                                    </button>
+                                </div>
+                                <div id="quote-items" class="space-y-2">
+                                    <!-- Items will be added dynamically -->
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Sous-total</label>
+                                    <input type="number" id="quote-subtotal" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">TVA (%)</label>
+                                    <input type="number" id="quote-tax-rate" value="18" min="0" max="100" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Total</label>
+                                    <input type="number" id="quote-total" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm font-semibold">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                                <textarea id="quote-notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" onclick="window.hideModal('quote-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                                    Annuler
+                                </button>
+                                <button type="submit" id="quote-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
