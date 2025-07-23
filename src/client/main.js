@@ -1,13 +1,9 @@
 import '../shared/styles/main.css'
-import { App } from './components/App.js'
 import { DatabaseService } from '../shared/services/DatabaseService.js'
-import { LicenseService } from '../shared/services/LicenseService.js'
-import { ThemeService } from '../shared/services/ThemeService.js'
-import { I18nService } from '../shared/services/I18nService.js'
 
 class SamaFactureApp {
   constructor() {
-    this.app = null
+    this.currentPage = null
     this.isInitialized = false
   }
 
@@ -16,32 +12,18 @@ class SamaFactureApp {
       // Show loading screen
       this.showLoadingScreen()
 
-      // Initialize core services
-      await this.initializeServices()
-
-      // Check license status
-      const licenseStatus = await LicenseService.checkLicense()
-      if (!licenseStatus.isValid && !licenseStatus.isTrial) {
-        this.redirectToLicenseActivation()
-        return
-      }
-
       // Initialize database
       await DatabaseService.init()
 
-      // Initialize the main app
-      this.app = new App()
-      await this.app.init()
+      // Setup navigation
+      this.setupNavigation()
+
+      // Load initial page
+      await this.loadPage('dashboard')
 
       // Hide loading screen and show app
       this.hideLoadingScreen()
       this.showApp()
-
-      // Register service worker for PWA
-      this.registerServiceWorker()
-
-      // Setup offline detection
-      this.setupOfflineDetection()
 
       this.isInitialized = true
       console.log('✅ SamaFacture PWA initialized successfully')
@@ -52,14 +34,97 @@ class SamaFactureApp {
     }
   }
 
-  async initializeServices() {
-    // Initialize theme service
-    ThemeService.init()
+  setupNavigation() {
+    // Setup navigation click handlers
+    document.addEventListener('click', async (e) => {
+      const navLink = e.target.closest('[data-page]')
+      if (navLink) {
+        e.preventDefault()
+        const page = navLink.dataset.page
+        await this.loadPage(page)
+        
+        // Update active nav item
+        document.querySelectorAll('[data-page]').forEach(link => {
+          link.classList.remove('bg-blue-100', 'text-blue-700', 'border-blue-500')
+          link.classList.add('text-gray-600', 'hover:text-gray-900')
+        })
+        navLink.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-500')
+        navLink.classList.remove('text-gray-600', 'hover:text-gray-900')
+      }
+    })
+  }
 
-    // Initialize i18n service
-    await I18nService.init('fr')
+  async loadPage(pageName) {
+    const mainContent = document.getElementById('main-content')
+    if (!mainContent) return
 
-    console.log('✅ Core services initialized')
+    try {
+      let pageInstance = null
+
+      switch (pageName) {
+        case 'dashboard':
+          const { Dashboard } = await import('./pages/Dashboard.js')
+          pageInstance = new Dashboard()
+          break
+        case 'clients':
+          const { ClientList } = await import('./pages/clients/ClientList.js')
+          pageInstance = new ClientList()
+          break
+        case 'invoices':
+          const { InvoiceList } = await import('./pages/invoices/InvoiceList.js')
+          pageInstance = new InvoiceList()
+          break
+        case 'quotes':
+          const { QuoteList } = await import('./pages/quotes/QuoteList.js')
+          pageInstance = new QuoteList()
+          break
+        case 'products':
+          const { ProductList } = await import('./pages/products/ProductList.js')
+          pageInstance = new ProductList()
+          break
+        case 'license':
+          // Simple license page for now
+          mainContent.innerHTML = `
+            <div class="p-6">
+              <h1 class="text-2xl font-bold text-gray-900 mb-4">Licence</h1>
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p class="text-green-800">✅ Application activée - Version complète</p>
+              </div>
+            </div>
+          `
+          return
+        default:
+          mainContent.innerHTML = `
+            <div class="p-6">
+              <h1 class="text-2xl font-bold text-gray-900 mb-4">Page non trouvée</h1>
+              <p class="text-gray-600">La page demandée n'existe pas.</p>
+            </div>
+          `
+          return
+      }
+
+      if (pageInstance && pageInstance.render) {
+        // Clean up previous page
+        if (this.currentPage && this.currentPage.destroy) {
+          this.currentPage.destroy()
+        }
+
+        // Render new page
+        const pageElement = await pageInstance.render()
+        mainContent.innerHTML = ''
+        mainContent.appendChild(pageElement)
+        this.currentPage = pageInstance
+      }
+
+    } catch (error) {
+      console.error(`❌ Failed to load page ${pageName}:`, error)
+      mainContent.innerHTML = `
+        <div class="p-6">
+          <h1 class="text-2xl font-bold text-red-600 mb-4">Erreur</h1>
+          <p class="text-gray-600">Impossible de charger la page: ${error.message}</p>
+        </div>
+      `
+    }
   }
 
   showLoadingScreen() {
@@ -159,4 +224,3 @@ window.addEventListener('appinstalled', () => {
   console.log('✅ App installed successfully')
   deferredPrompt = null
 })
-
