@@ -4,10 +4,32 @@
  */
 
 export class PDFService {
+  static async loadJsPDF() {
+    // Check if jsPDF is already loaded
+    if (window.jsPDF) {
+      return window.jsPDF
+    }
+    
+    // Load jsPDF from CDN
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+      script.onload = () => {
+        if (window.jsPDF) {
+          resolve(window.jsPDF)
+        } else {
+          reject(new Error('jsPDF failed to load'))
+        }
+      }
+      script.onerror = () => reject(new Error('Failed to load jsPDF script'))
+      document.head.appendChild(script)
+    })
+  }
+
   static async generateInvoicePDF(invoice, client, companyInfo = {}) {
     try {
-      // Import jsPDF dynamically
-      const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+      // Load jsPDF
+      const jsPDF = await this.loadJsPDF()
       
       const doc = new jsPDF()
       
@@ -120,8 +142,8 @@ export class PDFService {
   
   static async generateQuotePDF(quote, client, companyInfo = {}) {
     try {
-      // Import jsPDF dynamically
-      const { jsPDF } = await import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+      // Load jsPDF
+      const jsPDF = await this.loadJsPDF()
       
       const doc = new jsPDF()
       
@@ -241,4 +263,3 @@ export class PDFService {
     }
   }
 }
-

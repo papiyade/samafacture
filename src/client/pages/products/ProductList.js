@@ -373,6 +373,60 @@ export class ProductList {
     this.modal.open()
   }
 
+  viewProduct(product) {
+    this.modal = new Modal({
+      title: `Produit: ${product.name}`,
+      content: `
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-medium text-gray-900 mb-2">Informations générales</h4>
+              <div class="space-y-2 text-sm">
+                <div><span class="font-medium">Nom:</span> ${product.name}</div>
+                <div><span class="font-medium">Prix:</span> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(product.price || 0)}</div>
+                <div><span class="font-medium">Catégorie:</span> ${product.category || 'Non définie'}</div>
+                <div><span class="font-medium">Stock:</span> ${product.stock || 0} unités</div>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900 mb-2">Détails</h4>
+              <div class="space-y-2 text-sm">
+                <div><span class="font-medium">Créé le:</span> ${new Date(product.created_at).toLocaleDateString('fr-FR')}</div>
+                <div><span class="font-medium">Modifié le:</span> ${new Date(product.updated_at).toLocaleDateString('fr-FR')}</div>
+              </div>
+            </div>
+          </div>
+          ${product.description ? `
+            <div class="border-t pt-4">
+              <h4 class="font-medium text-gray-900 mb-2">Description</h4>
+              <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded">${product.description}</p>
+            </div>
+          ` : ''}
+          <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button class="edit-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+              Modifier
+            </button>
+            <button class="close-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+              Fermer
+            </button>
+          </div>
+        </div>
+      `
+    })
+
+    this.modal.open()
+
+    // Add event listeners
+    this.modal.element.querySelector('.close-btn').addEventListener('click', () => {
+      this.modal.close()
+    })
+
+    this.modal.element.querySelector('.edit-btn').addEventListener('click', () => {
+      this.modal.close()
+      this.editProduct(product)
+    })
+  }
+
   editProduct(product) {
     this.showProductForm(product)
   }
@@ -423,10 +477,22 @@ export class ProductList {
     })
 
     this.modal.element.querySelector('.delete-btn').addEventListener('click', async () => {
-      DatabaseService.deleteProduct(product.id)
-      await this.loadProducts()
-      this.renderTable()
-      this.modal.close()
+      try {
+        DatabaseService.deleteProduct(product.id)
+        await this.loadProducts()
+        this.renderTable()
+        this.modal.close()
+        
+        // Show success notification
+        if (window.showNotification) {
+          window.showNotification('Produit supprimé avec succès', 'success')
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error)
+        if (window.showNotification) {
+          window.showNotification('Erreur lors de la suppression du produit', 'error')
+        }
+      }
     })
   }
 
@@ -520,4 +586,3 @@ export class ProductList {
     }
   }
 }
-
