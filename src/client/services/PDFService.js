@@ -28,8 +28,10 @@ export class PDFService {
 
   static async generateInvoicePDF(invoice, client, companyInfo = {}) {
     try {
+      console.log('Starting PDF generation for invoice:', invoice.number)
       // Load jsPDF
       const jsPDF = await this.loadJsPDF()
+      console.log('jsPDF loaded successfully:', !!jsPDF)
       
       const doc = new jsPDF()
       
@@ -142,8 +144,10 @@ export class PDFService {
   
   static async generateQuotePDF(quote, client, companyInfo = {}) {
     try {
+      console.log('Starting PDF generation for quote:', quote.number)
       // Load jsPDF
       const jsPDF = await this.loadJsPDF()
+      console.log('jsPDF loaded successfully:', !!jsPDF)
       
       const doc = new jsPDF()
       

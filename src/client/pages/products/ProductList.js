@@ -374,6 +374,7 @@ export class ProductList {
   }
 
   viewProduct(product) {
+    console.log('viewProduct called with:', product)
     this.modal = new Modal({
       title: `Produit: ${product.name}`,
       content: `
