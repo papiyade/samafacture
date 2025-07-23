@@ -1,0 +1,153 @@
+{
+  "app": {
+    "name": "SamaFacture",
+    "tagline": "Simplified billing and quotes",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "offline": "Offline mode",
+    "retry": "Retry"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "invoices": "Invoices",
+    "quotes": "Quotes",
+    "clients": "Clients",
+    "products": "Products",
+    "reports": "Reports",
+    "settings": "Settings",
+    "license": "License"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to SamaFacture",
+    "stats": {
+      "totalRevenue": "Total Revenue",
+      "totalInvoices": "Invoices",
+      "totalClients": "Clients",
+      "pendingPayments": "Pending"
+    },
+    "recentInvoices": "Recent Invoices",
+    "topClients": "Top Clients",
+    "monthlyRevenue": "Monthly Revenue"
+  },
+  "invoices": {
+    "title": "Invoices",
+    "new": "New Invoice",
+    "edit": "Edit Invoice",
+    "number": "Number",
+    "date": "Date",
+    "dueDate": "Due Date",
+    "client": "Client",
+    "amount": "Amount",
+    "status": "Status",
+    "actions": "Actions",
+    "statuses": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "cancelled": "Cancelled"
+    }
+  },
+  "quotes": {
+    "title": "Quotes",
+    "new": "New Quote",
+    "edit": "Edit Quote",
+    "number": "Number",
+    "date": "Date",
+    "validUntil": "Valid Until",
+    "client": "Client",
+    "amount": "Amount",
+    "status": "Status",
+    "actions": "Actions",
+    "statuses": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "new": "New Client",
+    "edit": "Edit Client",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "company": "Company",
+    "totalInvoices": "Total Invoices",
+    "totalAmount": "Total Amount"
+  },
+  "products": {
+    "title": "Products and Services",
+    "new": "New Product",
+    "edit": "Edit Product",
+    "name": "Name",
+    "description": "Description",
+    "price": "Price",
+    "category": "Category",
+    "unit": "Unit",
+    "stock": "Stock"
+  },
+  "forms": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "required": "Required field",
+    "invalid": "Invalid format"
+  },
+  "license": {
+    "title": "License",
+    "trial": "Trial Version",
+    "trialDaysLeft": "{{days}} days left",
+    "expired": "License Expired",
+    "activate": "Activate License",
+    "licenseKey": "License Key",
+    "enterKey": "Enter your license key",
+    "invalid": "Invalid license key",
+    "activated": "License activated successfully"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "appearance": "Appearance",
+    "company": "Company",
+    "invoice": "Invoicing",
+    "theme": "Theme",
+    "language": "Language",
+    "currency": "Currency",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
+  "pdf": {
+    "invoice": "Invoice",
+    "quote": "Quote",
+    "billTo": "Bill To",
+    "quoteTo": "Quote To",
+    "date": "Date",
+    "dueDate": "Due Date",
+    "validUntil": "Valid Until",
+    "description": "Description",
+    "quantity": "Quantity",
+    "price": "Unit Price",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "discount": "Discount",
+    "grandTotal": "Grand Total",
+    "notes": "Notes",
+    "terms": "Terms"
+  }
+}
+

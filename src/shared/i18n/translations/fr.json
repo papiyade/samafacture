@@ -1,0 +1,153 @@
+{
+  "app": {
+    "name": "SamaFacture",
+    "tagline": "Facturation et devis simplifiés",
+    "loading": "Chargement en cours...",
+    "error": "Une erreur s'est produite",
+    "offline": "Mode hors ligne",
+    "retry": "Réessayer"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "invoices": "Factures",
+    "quotes": "Devis",
+    "clients": "Clients",
+    "products": "Produits",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "license": "Licence"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue sur SamaFacture",
+    "stats": {
+      "totalRevenue": "Chiffre d'affaires",
+      "totalInvoices": "Factures",
+      "totalClients": "Clients",
+      "pendingPayments": "En attente"
+    },
+    "recentInvoices": "Factures récentes",
+    "topClients": "Meilleurs clients",
+    "monthlyRevenue": "Revenus mensuels"
+  },
+  "invoices": {
+    "title": "Factures",
+    "new": "Nouvelle facture",
+    "edit": "Modifier la facture",
+    "number": "Numéro",
+    "date": "Date",
+    "dueDate": "Date d'échéance",
+    "client": "Client",
+    "amount": "Montant",
+    "status": "Statut",
+    "actions": "Actions",
+    "statuses": {
+      "draft": "Brouillon",
+      "sent": "Envoyée",
+      "paid": "Payée",
+      "overdue": "En retard",
+      "cancelled": "Annulée"
+    }
+  },
+  "quotes": {
+    "title": "Devis",
+    "new": "Nouveau devis",
+    "edit": "Modifier le devis",
+    "number": "Numéro",
+    "date": "Date",
+    "validUntil": "Valide jusqu'au",
+    "client": "Client",
+    "amount": "Montant",
+    "status": "Statut",
+    "actions": "Actions",
+    "statuses": {
+      "draft": "Brouillon",
+      "sent": "Envoyé",
+      "accepted": "Accepté",
+      "rejected": "Refusé",
+      "expired": "Expiré"
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "new": "Nouveau client",
+    "edit": "Modifier le client",
+    "name": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "company": "Entreprise",
+    "totalInvoices": "Total factures",
+    "totalAmount": "Montant total"
+  },
+  "products": {
+    "title": "Produits et services",
+    "new": "Nouveau produit",
+    "edit": "Modifier le produit",
+    "name": "Nom",
+    "description": "Description",
+    "price": "Prix",
+    "category": "Catégorie",
+    "unit": "Unité",
+    "stock": "Stock"
+  },
+  "forms": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer",
+    "required": "Champ obligatoire",
+    "invalid": "Format invalide"
+  },
+  "license": {
+    "title": "Licence",
+    "trial": "Version d'essai",
+    "trialDaysLeft": "{{days}} jours restants",
+    "expired": "Licence expirée",
+    "activate": "Activer la licence",
+    "licenseKey": "Clé de licence",
+    "enterKey": "Entrez votre clé de licence",
+    "invalid": "Clé de licence invalide",
+    "activated": "Licence activée avec succès"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "general": "Général",
+    "appearance": "Apparence",
+    "company": "Entreprise",
+    "invoice": "Facturation",
+    "theme": "Thème",
+    "language": "Langue",
+    "currency": "Devise",
+    "themes": {
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
+    }
+  },
+  "pdf": {
+    "invoice": "Facture",
+    "quote": "Devis",
+    "billTo": "Facturé à",
+    "quoteTo": "Devis pour",
+    "date": "Date",
+    "dueDate": "Date d'échéance",
+    "validUntil": "Valide jusqu'au",
+    "description": "Description",
+    "quantity": "Quantité",
+    "price": "Prix unitaire",
+    "total": "Total",
+    "subtotal": "Sous-total",
+    "tax": "TVA",
+    "discount": "Remise",
+    "grandTotal": "Total général",
+    "notes": "Notes",
+    "terms": "Conditions"
+  }
+}
+
