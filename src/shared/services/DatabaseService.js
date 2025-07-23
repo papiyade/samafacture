@@ -1,304 +1,314 @@
 /**
- * Database Service - Manages SQLite database operations
+ * Database Service - Manages local storage operations (simplified version)
+ * Uses localStorage instead of SQLite to avoid WASM issues during development
  */
 export class DatabaseService {
-  static db = null
   static isInitialized = false
+  static storagePrefix = 'samafacture_'
 
   static async init() {
     try {
-      // Import sql.js
-      const initSqlJs = (await import('sql.js')).default
-      const SQL = await initSqlJs({
-        locateFile: file => `/node_modules/sql.js/dist/${file}`
-      })
-
-      // Try to load existing database from IndexedDB
-      const existingDb = await this.loadFromIndexedDB()
-      
-      if (existingDb) {
-        this.db = new SQL.Database(existingDb)
-        console.log('✅ Loaded existing database from IndexedDB')
-      } else {
-        // Create new database
-        this.db = new SQL.Database()
-        await this.createTables()
-        await this.saveToIndexedDB()
-        console.log('✅ Created new database')
-      }
-
+      // Initialize with localStorage for now
+      await this.createDefaultData()
       this.isInitialized = true
-      return this.db
-
+      console.log('✅ Database initialized with localStorage')
+      return true
     } catch (error) {
       console.error('❌ Failed to initialize database:', error)
       throw error
     }
   }
 
-  static async createTables() {
-    const schema = `
-      -- Settings table
-      CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+  static async createDefaultData() {
+    // Create default settings if they don't exist
+    const defaultSettings = {
+      company_name: 'Mon Entreprise',
+      company_email: '',
+      company_phone: '',
+      company_address: '',
+      currency: 'XOF',
+      tax_rate: '18',
+      invoice_prefix: 'INV',
+      quote_prefix: 'DEV',
+      next_invoice_number: '1',
+      next_quote_number: '1'
+    }
 
-      -- Clients table
-      CREATE TABLE IF NOT EXISTS clients (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT,
-        phone TEXT,
-        address TEXT,
-        company TEXT,
-        notes TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
+    const existingSettings = this.getItem('settings')
+    if (!existingSettings) {
+      this.setItem('settings', defaultSettings)
+    }
 
-      -- Products table
-      CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        price DECIMAL(10,2) NOT NULL DEFAULT 0,
-        category TEXT,
-        unit TEXT DEFAULT 'pièce',
-        stock INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Invoices table
-      CREATE TABLE IF NOT EXISTS invoices (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        number TEXT UNIQUE NOT NULL,
-        client_id INTEGER NOT NULL,
-        date DATE NOT NULL,
-        due_date DATE,
-        status TEXT DEFAULT 'draft',
-        subtotal DECIMAL(10,2) DEFAULT 0,
-        tax_rate DECIMAL(5,2) DEFAULT 0,
-        tax_amount DECIMAL(10,2) DEFAULT 0,
-        discount_rate DECIMAL(5,2) DEFAULT 0,
-        discount_amount DECIMAL(10,2) DEFAULT 0,
-        total DECIMAL(10,2) DEFAULT 0,
-        notes TEXT,
-        terms TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (client_id) REFERENCES clients (id)
-      );
-
-      -- Invoice items table
-      CREATE TABLE IF NOT EXISTS invoice_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        invoice_id INTEGER NOT NULL,
-        product_id INTEGER,
-        description TEXT NOT NULL,
-        quantity DECIMAL(10,2) NOT NULL DEFAULT 1,
-        price DECIMAL(10,2) NOT NULL DEFAULT 0,
-        total DECIMAL(10,2) NOT NULL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (invoice_id) REFERENCES invoices (id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products (id)
-      );
-
-      -- Quotes table
-      CREATE TABLE IF NOT EXISTS quotes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        number TEXT UNIQUE NOT NULL,
-        client_id INTEGER NOT NULL,
-        date DATE NOT NULL,
-        valid_until DATE,
-        status TEXT DEFAULT 'draft',
-        subtotal DECIMAL(10,2) DEFAULT 0,
-        tax_rate DECIMAL(5,2) DEFAULT 0,
-        tax_amount DECIMAL(10,2) DEFAULT 0,
-        discount_rate DECIMAL(5,2) DEFAULT 0,
-        discount_amount DECIMAL(10,2) DEFAULT 0,
-        total DECIMAL(10,2) DEFAULT 0,
-        notes TEXT,
-        terms TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (client_id) REFERENCES clients (id)
-      );
-
-      -- Quote items table
-      CREATE TABLE IF NOT EXISTS quote_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        quote_id INTEGER NOT NULL,
-        product_id INTEGER,
-        description TEXT NOT NULL,
-        quantity DECIMAL(10,2) NOT NULL DEFAULT 1,
-        price DECIMAL(10,2) NOT NULL DEFAULT 0,
-        total DECIMAL(10,2) NOT NULL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (quote_id) REFERENCES quotes (id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products (id)
-      );
-
-      -- Insert default settings
-      INSERT OR IGNORE INTO settings (key, value) VALUES 
-        ('company_name', 'Mon Entreprise'),
-        ('company_email', ''),
-        ('company_phone', ''),
-        ('company_address', ''),
-        ('currency', 'XOF'),
-        ('tax_rate', '18'),
-        ('invoice_prefix', 'INV'),
-        ('quote_prefix', 'DEV'),
-        ('next_invoice_number', '1'),
-        ('next_quote_number', '1');
-    `
-
-    this.db.exec(schema)
-  }
-
-  static async saveToIndexedDB() {
-    if (!this.db) return
-
-    try {
-      const data = this.db.export()
-      const request = indexedDB.open('SamaFactureDB', 1)
-      
-      return new Promise((resolve, reject) => {
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => {
-          const db = request.result
-          const transaction = db.transaction(['database'], 'readwrite')
-          const store = transaction.objectStore('database')
-          store.put(data, 'main')
-          transaction.oncomplete = () => resolve()
-          transaction.onerror = () => reject(transaction.error)
-        }
-        request.onupgradeneeded = () => {
-          const db = request.result
-          if (!db.objectStoreNames.contains('database')) {
-            db.createObjectStore('database')
-          }
-        }
-      })
-    } catch (error) {
-      console.error('Failed to save database to IndexedDB:', error)
+    // Initialize empty arrays for data if they don't exist
+    if (!this.getItem('clients')) {
+      this.setItem('clients', [])
+    }
+    if (!this.getItem('products')) {
+      this.setItem('products', [])
+    }
+    if (!this.getItem('invoices')) {
+      this.setItem('invoices', [])
+    }
+    if (!this.getItem('quotes')) {
+      this.setItem('quotes', [])
     }
   }
 
-  static async loadFromIndexedDB() {
+  static getItem(key) {
     try {
-      const request = indexedDB.open('SamaFactureDB', 1)
-      
-      return new Promise((resolve, reject) => {
-        request.onerror = () => resolve(null) // Return null if no database exists
-        request.onsuccess = () => {
-          const db = request.result
-          if (!db.objectStoreNames.contains('database')) {
-            resolve(null)
-            return
-          }
-          
-          const transaction = db.transaction(['database'], 'readonly')
-          const store = transaction.objectStore('database')
-          const getRequest = store.get('main')
-          
-          getRequest.onsuccess = () => {
-            resolve(getRequest.result || null)
-          }
-          getRequest.onerror = () => resolve(null)
-        }
-        request.onupgradeneeded = () => {
-          const db = request.result
-          if (!db.objectStoreNames.contains('database')) {
-            db.createObjectStore('database')
-          }
-        }
-      })
+      const item = localStorage.getItem(this.storagePrefix + key)
+      return item ? JSON.parse(item) : null
     } catch (error) {
-      console.error('Failed to load database from IndexedDB:', error)
+      console.error('Error getting item from storage:', error)
       return null
     }
   }
 
-  static query(sql, params = []) {
-    if (!this.isInitialized || !this.db) {
-      throw new Error('Database not initialized')
-    }
-
+  static setItem(key, value) {
     try {
-      const stmt = this.db.prepare(sql)
-      const result = stmt.getAsObject(params)
-      stmt.free()
-      return result
-    } catch (error) {
-      console.error('Database query error:', error)
-      throw error
-    }
-  }
-
-  static queryAll(sql, params = []) {
-    if (!this.isInitialized || !this.db) {
-      throw new Error('Database not initialized')
-    }
-
-    try {
-      const stmt = this.db.prepare(sql)
-      const results = []
-      
-      while (stmt.step()) {
-        results.push(stmt.getAsObject())
-      }
-      
-      stmt.free()
-      return results
-    } catch (error) {
-      console.error('Database query error:', error)
-      throw error
-    }
-  }
-
-  static exec(sql, params = []) {
-    if (!this.isInitialized || !this.db) {
-      throw new Error('Database not initialized')
-    }
-
-    try {
-      if (params.length > 0) {
-        const stmt = this.db.prepare(sql)
-        stmt.run(params)
-        stmt.free()
-      } else {
-        this.db.exec(sql)
-      }
-      
-      // Save to IndexedDB after modifications
-      this.saveToIndexedDB()
-      
+      localStorage.setItem(this.storagePrefix + key, JSON.stringify(value))
       return true
     } catch (error) {
-      console.error('Database exec error:', error)
-      throw error
+      console.error('Error setting item in storage:', error)
+      return false
     }
   }
 
-  static getLastInsertId() {
-    if (!this.isInitialized || !this.db) {
-      throw new Error('Database not initialized')
-    }
-
-    const result = this.query('SELECT last_insert_rowid() as id')
-    return result.id
-  }
-
-  static async backup() {
-    if (!this.db) return null
-    
+  static removeItem(key) {
     try {
-      const data = this.db.export()
-      const blob = new Blob([data], { type: 'application/octet-stream' })
+      localStorage.removeItem(this.storagePrefix + key)
+      return true
+    } catch (error) {
+      console.error('Error removing item from storage:', error)
+      return false
+    }
+  }
+
+  // Settings methods
+  static getSetting(key) {
+    const settings = this.getItem('settings') || {}
+    return settings[key]
+  }
+
+  static setSetting(key, value) {
+    const settings = this.getItem('settings') || {}
+    settings[key] = value
+    return this.setItem('settings', settings)
+  }
+
+  // Clients methods
+  static getClients() {
+    return this.getItem('clients') || []
+  }
+
+  static addClient(client) {
+    const clients = this.getClients()
+    const newClient = {
+      id: Date.now(),
+      ...client,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    clients.push(newClient)
+    this.setItem('clients', clients)
+    return newClient
+  }
+
+  static updateClient(id, updates) {
+    const clients = this.getClients()
+    const index = clients.findIndex(c => c.id === id)
+    if (index !== -1) {
+      clients[index] = {
+        ...clients[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('clients', clients)
+      return clients[index]
+    }
+    return null
+  }
+
+  static deleteClient(id) {
+    const clients = this.getClients()
+    const filtered = clients.filter(c => c.id !== id)
+    this.setItem('clients', filtered)
+    return true
+  }
+
+  static getClient(id) {
+    const clients = this.getClients()
+    return clients.find(c => c.id === id) || null
+  }
+
+  // Products methods
+  static getProducts() {
+    return this.getItem('products') || []
+  }
+
+  static addProduct(product) {
+    const products = this.getProducts()
+    const newProduct = {
+      id: Date.now(),
+      ...product,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    products.push(newProduct)
+    this.setItem('products', products)
+    return newProduct
+  }
+
+  static updateProduct(id, updates) {
+    const products = this.getProducts()
+    const index = products.findIndex(p => p.id === id)
+    if (index !== -1) {
+      products[index] = {
+        ...products[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('products', products)
+      return products[index]
+    }
+    return null
+  }
+
+  static deleteProduct(id) {
+    const products = this.getProducts()
+    const filtered = products.filter(p => p.id !== id)
+    this.setItem('products', filtered)
+    return true
+  }
+
+  // Invoices methods
+  static getInvoices() {
+    return this.getItem('invoices') || []
+  }
+
+  static addInvoice(invoice) {
+    const invoices = this.getInvoices()
+    const newInvoice = {
+      id: Date.now(),
+      number: this.generateInvoiceNumber(),
+      ...invoice,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    invoices.push(newInvoice)
+    this.setItem('invoices', invoices)
+    
+    // Increment next invoice number
+    const nextNumber = parseInt(this.getSetting('next_invoice_number')) + 1
+    this.setSetting('next_invoice_number', nextNumber.toString())
+    
+    return newInvoice
+  }
+
+  static updateInvoice(id, updates) {
+    const invoices = this.getInvoices()
+    const index = invoices.findIndex(i => i.id === id)
+    if (index !== -1) {
+      invoices[index] = {
+        ...invoices[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('invoices', invoices)
+      return invoices[index]
+    }
+    return null
+  }
+
+  static deleteInvoice(id) {
+    const invoices = this.getInvoices()
+    const filtered = invoices.filter(i => i.id !== id)
+    this.setItem('invoices', filtered)
+    return true
+  }
+
+  static getInvoice(id) {
+    const invoices = this.getInvoices()
+    return invoices.find(i => i.id === id) || null
+  }
+
+  static generateInvoiceNumber() {
+    const prefix = this.getSetting('invoice_prefix') || 'INV'
+    const nextNumber = this.getSetting('next_invoice_number') || '1'
+    return `${prefix}-${nextNumber.padStart(4, '0')}`
+  }
+
+  // Quotes methods
+  static getQuotes() {
+    return this.getItem('quotes') || []
+  }
+
+  static addQuote(quote) {
+    const quotes = this.getQuotes()
+    const newQuote = {
+      id: Date.now(),
+      number: this.generateQuoteNumber(),
+      ...quote,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    quotes.push(newQuote)
+    this.setItem('quotes', quotes)
+    
+    // Increment next quote number
+    const nextNumber = parseInt(this.getSetting('next_quote_number')) + 1
+    this.setSetting('next_quote_number', nextNumber.toString())
+    
+    return newQuote
+  }
+
+  static generateQuoteNumber() {
+    const prefix = this.getSetting('quote_prefix') || 'DEV'
+    const nextNumber = this.getSetting('next_quote_number') || '1'
+    return `${prefix}-${nextNumber.padStart(4, '0')}`
+  }
+
+  // Statistics methods
+  static getStats() {
+    const invoices = this.getInvoices()
+    const clients = this.getClients()
+    const products = this.getProducts()
+    
+    const totalRevenue = invoices
+      .filter(inv => inv.status === 'paid')
+      .reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+    
+    const pendingAmount = invoices
+      .filter(inv => inv.status === 'sent')
+      .reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+
+    return {
+      totalClients: clients.length,
+      totalInvoices: invoices.length,
+      totalProducts: products.length,
+      totalRevenue,
+      pendingAmount,
+      paidInvoices: invoices.filter(inv => inv.status === 'paid').length,
+      pendingInvoices: invoices.filter(inv => inv.status === 'sent').length,
+      draftInvoices: invoices.filter(inv => inv.status === 'draft').length
+    }
+  }
+
+  // Backup and restore
+  static async backup() {
+    try {
+      const data = {
+        settings: this.getItem('settings'),
+        clients: this.getItem('clients'),
+        products: this.getItem('products'),
+        invoices: this.getItem('invoices'),
+        quotes: this.getItem('quotes'),
+        exportDate: new Date().toISOString()
+      }
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { 
+        type: 'application/json' 
+      })
       return blob
     } catch (error) {
       console.error('Failed to create backup:', error)
@@ -308,17 +318,15 @@ export class DatabaseService {
 
   static async restore(file) {
     try {
-      const arrayBuffer = await file.arrayBuffer()
-      const data = new Uint8Array(arrayBuffer)
+      const text = await file.text()
+      const data = JSON.parse(text)
       
-      // Import sql.js
-      const initSqlJs = (await import('sql.js')).default
-      const SQL = await initSqlJs({
-        locateFile: file => `/node_modules/sql.js/dist/${file}`
-      })
-      
-      this.db = new SQL.Database(data)
-      await this.saveToIndexedDB()
+      // Restore all data
+      if (data.settings) this.setItem('settings', data.settings)
+      if (data.clients) this.setItem('clients', data.clients)
+      if (data.products) this.setItem('products', data.products)
+      if (data.invoices) this.setItem('invoices', data.invoices)
+      if (data.quotes) this.setItem('quotes', data.quotes)
       
       console.log('✅ Database restored successfully')
       return true
@@ -326,6 +334,13 @@ export class DatabaseService {
       console.error('Failed to restore database:', error)
       throw error
     }
+  }
+
+  // Clear all data
+  static clearAll() {
+    const keys = ['settings', 'clients', 'products', 'invoices', 'quotes']
+    keys.forEach(key => this.removeItem(key))
+    return this.createDefaultData()
   }
 }
 
