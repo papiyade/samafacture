@@ -203,9 +203,79 @@ class SamaFactureApp {
   }
 }
 
+// Global navigation function
+window.navigateToPage = async (pageName, options = {}) => {
+  if (window.samaFactureApp) {
+    await window.samaFactureApp.loadPage(pageName, options)
+  }
+}
+
+// Global function to show modal
+window.showModal = (modalId, data = {}) => {
+  const modal = document.getElementById(modalId)
+  if (modal) {
+    modal.classList.remove('hidden')
+    modal.classList.add('flex')
+    
+    // Populate modal with data if provided
+    if (data && Object.keys(data).length > 0) {
+      Object.keys(data).forEach(key => {
+        const element = modal.querySelector(`[data-field="${key}"]`)
+        if (element) {
+          element.value = data[key]
+        }
+      })
+    }
+  }
+}
+
+// Global function to hide modal
+window.hideModal = (modalId) => {
+  const modal = document.getElementById(modalId)
+  if (modal) {
+    modal.classList.add('hidden')
+    modal.classList.remove('flex')
+  }
+}
+
+// Global action functions
+window.editItem = (type, id) => {
+  console.log(`Editing ${type} with ID: ${id}`)
+  // For now, just show the appropriate modal
+  switch (type) {
+    case 'invoice':
+      window.showModal('invoice-modal')
+      break
+    case 'quote':
+      window.showModal('quote-modal')
+      break
+    case 'client':
+      window.showModal('client-modal')
+      break
+  }
+}
+
+window.viewItem = (type, id) => {
+  console.log(`Viewing ${type} with ID: ${id}`)
+  alert(`Affichage de ${type} #${id} - Fonctionnalité en développement`)
+}
+
+window.duplicateItem = (type, id) => {
+  console.log(`Duplicating ${type} with ID: ${id}`)
+  alert(`Duplication de ${type} #${id} - Fonctionnalité en développement`)
+}
+
+window.deleteItem = (type, id) => {
+  if (confirm(`Êtes-vous sûr de vouloir supprimer cet élément ?`)) {
+    console.log(`Deleting ${type} with ID: ${id}`)
+    alert(`Suppression de ${type} #${id} - Fonctionnalité en développement`)
+  }
+}
+
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   const app = new SamaFactureApp()
+  window.samaFactureApp = app
   app.init()
 })
 

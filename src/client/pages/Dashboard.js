@@ -94,7 +94,7 @@ export class Dashboard {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Factures récentes</h3>
-            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.app.navigate('invoices')">
+            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.navigateToPage('invoices')">
               Voir tout
             </button>
           </div>
@@ -107,7 +107,7 @@ export class Dashboard {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white">Clients récents</h3>
-            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.app.navigate('clients')">
+            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.navigateToPage('clients')">
               Voir tout
             </button>
           </div>
@@ -163,13 +163,13 @@ export class Dashboard {
   handleQuickAction(action) {
     switch (action) {
       case 'new-invoice':
-        window.app.navigate('invoices', { action: 'new' })
+        window.showModal('invoice-modal')
         break
       case 'new-quote':
-        window.app.navigate('quotes', { action: 'new' })
+        window.showModal('quote-modal')
         break
       case 'new-client':
-        window.app.navigate('clients', { action: 'new' })
+        window.showModal('client-modal')
         break
     }
   }
@@ -216,7 +216,7 @@ export class Dashboard {
       container.innerHTML = `
         <div class="text-center py-4">
           <p class="text-gray-500 dark:text-gray-400">Aucune facture récente</p>
-          <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="window.app.navigate('invoices', { action: 'new' })">
+          <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="window.navigateToPage('invoices')">
             Créer votre première facture
           </button>
         </div>
@@ -229,7 +229,7 @@ export class Dashboard {
         ${invoices.map(invoice => {
           const client = DatabaseService.getClient(invoice.client_id)
           return `
-            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="window.app.navigate('invoices', { id: ${invoice.id} })">
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="window.navigateToPage('invoices')">
               <div class="flex-1">
                 <div class="flex items-center space-x-3">
                   <div class="font-medium text-gray-900 dark:text-white">${invoice.number}</div>
@@ -328,4 +328,3 @@ export class Dashboard {
     }
   }
 }
-
