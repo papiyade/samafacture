@@ -86,9 +86,7 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true,
     rollupOptions: {
-      input: {
-        main: './index.html'
-      }
+      input: './src/client/index.html'
     }
   },
   server: {

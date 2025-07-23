@@ -1,279 +1,331 @@
-import { I18nService } from '../../shared/services/I18nService.js'
+import { DatabaseService } from '../../shared/services/DatabaseService.js'
 
-/**
- * Dashboard Page - Main dashboard with statistics and overview
- */
 export class Dashboard {
   constructor() {
-    this.stats = {
-      totalRevenue: 0,
-      totalInvoices: 0,
-      totalClients: 0,
-      pendingPayments: 0
-    }
-  }
-
-  async init() {
-    await this.loadStats()
-    this.setupEventListeners()
-  }
-
-  async loadStats() {
-    // TODO: Load actual stats from database
-    this.stats = {
-      totalRevenue: 2450000,
-      totalInvoices: 156,
-      totalClients: 42,
-      pendingPayments: 8
-    }
+    this.element = null
   }
 
   async render() {
+    // Initialize database if not already done
+    if (!DatabaseService.isInitialized) {
+      await DatabaseService.init()
+    }
+
+    // Get real statistics from database
+    const stats = await this.getStats()
+    
+    this.element = document.createElement('div')
+    this.element.className = 'p-6'
+    this.element.innerHTML = `
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tableau de bord</h1>
+        <p class="text-gray-600 dark:text-gray-400">Bienvenue sur SamaFacture</p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        ${this.renderStatsCard('Chiffre d\'affaires', stats.totalRevenue, 'XOF', 'text-green-600', `
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+          </svg>
+        `)}
+        
+        ${this.renderStatsCard('Factures', stats.totalInvoices, '', 'text-blue-600', `
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+        `)}
+        
+        ${this.renderStatsCard('Clients', stats.totalClients, '', 'text-purple-600', `
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+          </svg>
+        `)}
+        
+        ${this.renderStatsCard('En attente', stats.pendingAmount, 'XOF', 'text-orange-600', `
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        `)}
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <button class="quick-action-btn bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-lg shadow transition-colors" data-action="new-invoice">
+          <div class="flex items-center">
+            <svg class="w-8 h-8 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            <div class="text-left">
+              <div class="font-semibold">Nouvelle facture</div>
+              <div class="text-sm opacity-90">Créer une facture rapidement</div>
+            </div>
+          </div>
+        </button>
+
+        <button class="quick-action-btn bg-green-600 hover:bg-green-700 text-white p-6 rounded-lg shadow transition-colors" data-action="new-quote">
+          <div class="flex items-center">
+            <svg class="w-8 h-8 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <div class="text-left">
+              <div class="font-semibold">Nouveau devis</div>
+              <div class="text-sm opacity-90">Créer un devis rapidement</div>
+            </div>
+          </div>
+        </button>
+
+        <button class="quick-action-btn bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-lg shadow transition-colors" data-action="new-client">
+          <div class="flex items-center">
+            <svg class="w-8 h-8 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <div class="text-left">
+              <div class="font-semibold">Nouveau client</div>
+              <div class="text-sm opacity-90">Ajouter un client</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Charts and Recent Activity -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Invoices -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Factures récentes</h3>
+            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.app.navigate('invoices')">
+              Voir tout
+            </button>
+          </div>
+          <div id="recent-invoices">
+            <!-- Recent invoices will be loaded here -->
+          </div>
+        </div>
+
+        <!-- Recent Clients -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Clients récents</h3>
+            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.app.navigate('clients')">
+              Voir tout
+            </button>
+          </div>
+          <div id="recent-clients">
+            <!-- Recent clients will be loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Overview -->
+      <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Aperçu des statuts</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-600">${stats.draftInvoices}</div>
+            <div class="text-sm text-gray-500">Brouillons</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-blue-600">${stats.pendingInvoices}</div>
+            <div class="text-sm text-gray-500">En attente</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-green-600">${stats.paidInvoices}</div>
+            <div class="text-sm text-gray-500">Payées</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-purple-600">${stats.totalProducts}</div>
+            <div class="text-sm text-gray-500">Produits</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-orange-600">${DatabaseService.getQuotes().length}</div>
+            <div class="text-sm text-gray-500">Devis</div>
+          </div>
+        </div>
+      </div>
+    `
+
+    // Add event listeners for quick actions
+    this.element.querySelectorAll('.quick-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const action = e.currentTarget.dataset.action
+        this.handleQuickAction(action)
+      })
+    })
+
+    // Load recent data
+    await this.loadRecentInvoices()
+    await this.loadRecentClients()
+    
+    return this.element
+  }
+
+  handleQuickAction(action) {
+    switch (action) {
+      case 'new-invoice':
+        window.app.navigate('invoices', { action: 'new' })
+        break
+      case 'new-quote':
+        window.app.navigate('quotes', { action: 'new' })
+        break
+      case 'new-client':
+        window.app.navigate('clients', { action: 'new' })
+        break
+    }
+  }
+
+  renderStatsCard(title, value, suffix, colorClass, icon) {
+    const formattedValue = suffix === 'XOF' 
+      ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(value)
+      : new Intl.NumberFormat('fr-FR').format(value)
+
     return `
-      <div class="container-fluid py-6">
-        <!-- Header -->
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            ${I18nService.t('dashboard.title')}
-          </h1>
-          <p class="text-gray-600 dark:text-gray-400">
-            ${I18nService.t('dashboard.welcome')}
-          </p>
-        </div>
-
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <!-- Total Revenue -->
-          <div class="card">
-            <div class="card-body">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    ${I18nService.t('dashboard.stats.totalRevenue')}
-                  </p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${I18nService.formatCurrency(this.stats.totalRevenue)}
-                  </p>
-                </div>
-                <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                  <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="mt-4">
-                <span class="text-sm text-green-600 dark:text-green-400 font-medium">+12.5%</span>
-                <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">vs mois dernier</span>
-              </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="${colorClass}">
+              ${icon}
             </div>
           </div>
-
-          <!-- Total Invoices -->
-          <div class="card">
-            <div class="card-body">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    ${I18nService.t('dashboard.stats.totalInvoices')}
-                  </p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${this.stats.totalInvoices}
-                  </p>
-                </div>
-                <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                  <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="mt-4">
-                <span class="text-sm text-blue-600 dark:text-blue-400 font-medium">+8.2%</span>
-                <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">vs mois dernier</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Clients -->
-          <div class="card">
-            <div class="card-body">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    ${I18nService.t('dashboard.stats.totalClients')}
-                  </p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${this.stats.totalClients}
-                  </p>
-                </div>
-                <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                  <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="mt-4">
-                <span class="text-sm text-purple-600 dark:text-purple-400 font-medium">+3 nouveaux</span>
-                <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">ce mois</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Pending Payments -->
-          <div class="card">
-            <div class="card-body">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    ${I18nService.t('dashboard.stats.pendingPayments')}
-                  </p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${this.stats.pendingPayments}
-                  </p>
-                </div>
-                <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                  <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="mt-4">
-                <span class="text-sm text-yellow-600 dark:text-yellow-400 font-medium">2 en retard</span>
-                <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">à relancer</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts and Recent Activity -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Revenue Chart -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                ${I18nService.t('dashboard.monthlyRevenue')}
-              </h3>
-            </div>
-            <div class="card-body">
-              <div class="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p class="text-gray-500 dark:text-gray-400">Graphique des revenus (à implémenter)</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Recent Invoices -->
-          <div class="card">
-            <div class="card-header flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                ${I18nService.t('dashboard.recentInvoices')}
-              </h3>
-              <a href="/invoices" data-route="/invoices" class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400">
-                Voir tout
-              </a>
-            </div>
-            <div class="card-body">
-              <div class="space-y-4">
-                ${this.renderRecentInvoices()}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="mt-8">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="/invoices/new" data-route="/invoices/new" class="card hover:shadow-md transition-shadow cursor-pointer">
-              <div class="card-body text-center">
-                <div class="w-12 h-12 bg-primary-100 dark:bg-primary-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                  </svg>
-                </div>
-                <h4 class="font-medium text-gray-900 dark:text-white">Nouvelle facture</h4>
-              </div>
-            </a>
-
-            <a href="/quotes/new" data-route="/quotes/new" class="card hover:shadow-md transition-shadow cursor-pointer">
-              <div class="card-body text-center">
-                <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                </div>
-                <h4 class="font-medium text-gray-900 dark:text-white">Nouveau devis</h4>
-              </div>
-            </a>
-
-            <a href="/clients/new" data-route="/clients/new" class="card hover:shadow-md transition-shadow cursor-pointer">
-              <div class="card-body text-center">
-                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                  </svg>
-                </div>
-                <h4 class="font-medium text-gray-900 dark:text-white">Nouveau client</h4>
-              </div>
-            </a>
-
-            <a href="/products/new" data-route="/products/new" class="card hover:shadow-md transition-shadow cursor-pointer">
-              <div class="card-body text-center">
-                <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                  </svg>
-                </div>
-                <h4 class="font-medium text-gray-900 dark:text-white">Nouveau produit</h4>
-              </div>
-            </a>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                ${title}
+              </dt>
+              <dd class="text-lg font-medium text-gray-900 dark:text-white">
+                ${formattedValue}${suffix && suffix !== 'XOF' ? ' ' + suffix : ''}
+              </dd>
+            </dl>
           </div>
         </div>
       </div>
     `
   }
 
-  renderRecentInvoices() {
-    // Mock data - will be replaced with real data
-    const recentInvoices = [
-      { id: 1, number: 'INV-001', client: 'Entreprise ABC', amount: 125000, status: 'paid' },
-      { id: 2, number: 'INV-002', client: 'Société XYZ', amount: 89000, status: 'sent' },
-      { id: 3, number: 'INV-003', client: 'SARL Exemple', amount: 156000, status: 'overdue' }
-    ]
-
-    return recentInvoices.map(invoice => `
-      <div class="flex items-center justify-between py-2">
-        <div class="flex items-center space-x-3">
-          <div class="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${invoice.number.slice(-2)}</span>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-900 dark:text-white">${invoice.number}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">${invoice.client}</p>
-          </div>
-        </div>
-        <div class="text-right">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">
-            ${I18nService.formatCurrency(invoice.amount)}
-          </p>
-          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${this.getStatusClasses(invoice.status)}">
-            ${I18nService.t(`invoices.statuses.${invoice.status}`)}
-          </span>
-        </div>
-      </div>
-    `).join('')
+  async getStats() {
+    return DatabaseService.getStats()
   }
 
-  getStatusClasses(status) {
-    const classes = {
-      paid: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      sent: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      overdue: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-      draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+  async loadRecentInvoices() {
+    const container = this.element.querySelector('#recent-invoices')
+    const invoices = DatabaseService.getInvoices()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
+
+    if (invoices.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <p class="text-gray-500 dark:text-gray-400">Aucune facture récente</p>
+          <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="window.app.navigate('invoices', { action: 'new' })">
+            Créer votre première facture
+          </button>
+        </div>
+      `
+      return
     }
-    return classes[status] || classes.draft
+
+    container.innerHTML = `
+      <div class="space-y-3">
+        ${invoices.map(invoice => {
+          const client = DatabaseService.getClient(invoice.client_id)
+          return `
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="window.app.navigate('invoices', { id: ${invoice.id} })">
+              <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                  <div class="font-medium text-gray-900 dark:text-white">${invoice.number}</div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">${client ? client.name : 'Client supprimé'}</div>
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">${new Date(invoice.date).toLocaleDateString('fr-FR')}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-medium text-gray-900 dark:text-white">
+                  ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(invoice.total || 0)}
+                </div>
+                <div class="text-sm">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${this.getStatusColor(invoice.status)}">
+                    ${this.getStatusLabel(invoice.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          `
+        }).join('')}
+      </div>
+    `
   }
 
-  setupEventListeners() {
-    // Add any dashboard-specific event listeners here
+  async loadRecentClients() {
+    const container = this.element.querySelector('#recent-clients')
+    const clients = DatabaseService.getClients()
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5)
+
+    if (clients.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <p class="text-gray-500 dark:text-gray-400">Aucun client récent</p>
+          <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="window.app.navigate('clients', { action: 'new' })">
+            Ajouter votre premier client
+          </button>
+        </div>
+      `
+      return
+    }
+
+    container.innerHTML = `
+      <div class="space-y-3">
+        ${clients.map(client => {
+          const invoices = DatabaseService.getInvoices().filter(inv => inv.client_id === client.id)
+          const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
+          
+          return `
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="window.app.navigate('clients', { id: ${client.id} })">
+              <div class="flex-1">
+                <div class="font-medium text-gray-900 dark:text-white">${client.name}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">${client.email || client.company || 'Pas d\'email'}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-medium text-gray-900 dark:text-white">
+                  ${invoices.length} facture${invoices.length > 1 ? 's' : ''}
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(totalAmount)}
+                </div>
+              </div>
+            </div>
+          `
+        }).join('')}
+      </div>
+    `
+  }
+
+  getStatusColor(status) {
+    const colors = {
+      draft: 'bg-gray-100 text-gray-800',
+      sent: 'bg-blue-100 text-blue-800',
+      paid: 'bg-green-100 text-green-800',
+      overdue: 'bg-red-100 text-red-800',
+      cancelled: 'bg-gray-100 text-gray-800'
+    }
+    return colors[status] || 'bg-gray-100 text-gray-800'
+  }
+
+  getStatusLabel(status) {
+    const labels = {
+      draft: 'Brouillon',
+      sent: 'Envoyée',
+      paid: 'Payée',
+      overdue: 'En retard',
+      cancelled: 'Annulée'
+    }
+    return labels[status] || status
+  }
+
+  destroy() {
+    if (this.element) {
+      this.element.remove()
+      this.element = null
+    }
   }
 }
 
