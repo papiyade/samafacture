@@ -1,6 +1,6 @@
 import '../shared/styles/main.css'
 import { DatabaseService } from '../shared/services/DatabaseService.js'
-import { PDFService } from './services/PDFService.js'
+import { PrintService } from './services/PDFService.js'
 
 class SamaFactureApp {
   constructor() {
@@ -1222,14 +1222,13 @@ window.generateInvoicePDF = async (invoiceId) => {
       address: DatabaseService.getSetting('company_address') || ''
     }
     
-    const doc = await PDFService.generateInvoicePDF(invoice, client, companyInfo)
-    await PDFService.downloadPDF(doc, `Facture_${invoice.number}.pdf`)
+    PrintService.printInvoice(invoice, client, companyInfo)
     
-    window.showNotification('PDF généré avec succès', 'success')
+    window.showNotification('Facture envoyée à l\'impression', 'success')
     
   } catch (error) {
-    console.error('Error generating invoice PDF:', error)
-    window.showNotification('Erreur lors de la génération du PDF', 'error')
+    console.error('Error printing invoice:', error)
+    window.showNotification('Erreur lors de l\'impression de la facture', 'error')
   }
 }
 
@@ -1257,14 +1256,13 @@ window.generateQuotePDF = async (quoteId) => {
       address: DatabaseService.getSetting('company_address') || ''
     }
     
-    const doc = await PDFService.generateQuotePDF(quote, client, companyInfo)
-    await PDFService.downloadPDF(doc, `Devis_${quote.number}.pdf`)
+    PrintService.printQuote(quote, client, companyInfo)
     
-    window.showNotification('PDF généré avec succès', 'success')
+    window.showNotification('Devis envoyé à l\'impression', 'success')
     
   } catch (error) {
-    console.error('Error generating quote PDF:', error)
-    window.showNotification('Erreur lors de la génération du PDF', 'error')
+    console.error('Error printing quote:', error)
+    window.showNotification('Erreur lors de l\'impression du devis', 'error')
   }
 }
 
