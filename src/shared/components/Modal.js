@@ -121,4 +121,54 @@ export class Modal {
       document.body.style.overflow = ''
     }
   }
+
+  // Static method for quick modal creation with actions
+  static create(options = {}) {
+    const modal = new Modal(options)
+    
+    // Add actions support
+    if (options.actions && options.actions.length > 0) {
+      const actionsHtml = options.actions.map(action => {
+        const variantClasses = {
+          primary: 'bg-primary-600 hover:bg-primary-700 text-white',
+          secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white',
+          danger: 'bg-red-600 hover:bg-red-700 text-white'
+        }
+        
+        const classes = variantClasses[action.variant] || variantClasses.primary
+        
+        return `
+          <button type="button" class="modal-action-btn px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${classes}" data-action="${action.label}">
+            ${action.label}
+          </button>
+        `
+      }).join('')
+      
+      const actionsContainer = `
+        <div class="mt-6 flex justify-end space-x-3">
+          ${actionsHtml}
+        </div>
+      `
+      
+      modal.options.content += actionsContainer
+    }
+    
+    modal.create()
+    
+    // Add action event listeners
+    if (options.actions) {
+      options.actions.forEach(action => {
+        const btn = modal.element.querySelector(`[data-action="${action.label}"]`)
+        if (btn && action.onClick) {
+          btn.addEventListener('click', action.onClick)
+        }
+      })
+    }
+    
+    return {
+      show: () => modal.open(),
+      close: () => modal.close(),
+      destroy: () => modal.destroy()
+    }
+  }
 }

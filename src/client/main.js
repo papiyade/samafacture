@@ -2,6 +2,7 @@ import '../shared/styles/main.css'
 import { DatabaseService } from '../shared/services/DatabaseService.js'
 import { PrintService } from './services/PDFService.js'
 import { ThemeService } from '../shared/services/ThemeService.js'
+import { NotificationService } from '../shared/services/NotificationService.js'
 
 class SamaFactureApp {
   constructor() {
@@ -16,6 +17,9 @@ class SamaFactureApp {
 
       // Initialize theme service
       ThemeService.init()
+
+      // Initialize notification service
+      NotificationService.init()
 
       // Initialize database
       await DatabaseService.init()
