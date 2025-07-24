@@ -57,6 +57,16 @@ class SamaFactureApp {
         navLink.classList.remove('text-gray-600', 'hover:text-gray-900')
       }
     })
+
+    // Setup theme toggle
+    const themeToggle = document.getElementById('theme-toggle')
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = ThemeService.getCurrentTheme()
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark'
+        ThemeService.setTheme(newTheme)
+      })
+    }
   }
 
   async loadPage(pageName) {
