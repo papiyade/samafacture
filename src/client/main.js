@@ -62,9 +62,7 @@ class SamaFactureApp {
     const themeToggle = document.getElementById('theme-toggle')
     if (themeToggle) {
       themeToggle.addEventListener('click', () => {
-        const currentTheme = ThemeService.getCurrentTheme()
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark'
-        ThemeService.setTheme(newTheme)
+        ThemeService.toggleTheme()
       })
     }
   }
