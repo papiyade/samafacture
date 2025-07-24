@@ -1,6 +1,6 @@
 import '../shared/styles/main.css'
 import { DatabaseService } from '../shared/services/DatabaseService.js'
-import { PrintService } from './services/PDFService.js'
+import { PDFService } from './services/PDFService.js'
 import { ThemeService } from '../shared/services/ThemeService.js'
 import { NotificationService } from '../shared/services/NotificationService.js'
 
@@ -1218,17 +1218,17 @@ window.handleQuoteSubmit = async (e) => {
 }
 
 // PDF Generation functions
-window.generateInvoicePDF = async (invoiceId) => {
+window.generateInvoicePDF = async (invoiceId, method = 'html2canvas') => {
   try {
     window.showNotification('Génération du PDF en cours...', 'info')
     
-    const invoice = DatabaseService.getInvoice(invoiceId)
+    const invoice = await DatabaseService.getInvoice(invoiceId)
     if (!invoice) {
       window.showNotification('Facture introuvable', 'error')
       return
     }
     
-    const client = DatabaseService.getClient(invoice.client_id)
+    const client = await DatabaseService.getClient(invoice.client_id)
     if (!client) {
       window.showNotification('Client introuvable', 'error')
       return
@@ -1239,10 +1239,51 @@ window.generateInvoicePDF = async (invoiceId) => {
       name: DatabaseService.getSetting('company_name') || 'Mon Entreprise',
       email: DatabaseService.getSetting('company_email') || '',
       phone: DatabaseService.getSetting('company_phone') || '',
-      address: DatabaseService.getSetting('company_address') || ''
+      address: DatabaseService.getSetting('company_address') || '',
+      website: DatabaseService.getSetting('company_website') || '',
+      taxNumber: DatabaseService.getSetting('company_tax_number') || '',
+      logo: DatabaseService.getSetting('company_logo') || '',
+      currency: DatabaseService.getSetting('currency') || 'XOF'
     }
     
-    PrintService.printInvoice(invoice, client, companyInfo)
+    const result = await PDFService.generateInvoicePDF(invoice, client, companyInfo, { method })
+    
+    window.showNotification(`PDF généré avec succès (${result.method})`, 'success')
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error)
+    window.showNotification('Erreur lors de la génération du PDF', 'error')
+  }
+}
+
+// Print invoice function
+window.printInvoice = async (invoiceId) => {
+  try {
+    const invoice = await DatabaseService.getInvoice(invoiceId)
+    if (!invoice) {
+      window.showNotification('Facture non trouvée', 'error')
+      return
+    }
+    
+    const client = await DatabaseService.getClient(invoice.client_id)
+    if (!client) {
+      window.showNotification('Client non trouvé', 'error')
+      return
+    }
+    
+    // Get company info from settings
+    const companyInfo = {
+      name: DatabaseService.getSetting('company_name') || 'Mon Entreprise',
+      email: DatabaseService.getSetting('company_email') || '',
+      phone: DatabaseService.getSetting('company_phone') || '',
+      address: DatabaseService.getSetting('company_address') || '',
+      website: DatabaseService.getSetting('company_website') || '',
+      taxNumber: DatabaseService.getSetting('company_tax_number') || '',
+      logo: DatabaseService.getSetting('company_logo') || '',
+      currency: DatabaseService.getSetting('currency') || 'XOF'
+    }
+    
+    PDFService.printInvoice(invoice, client, companyInfo)
     
     window.showNotification('Facture envoyée à l\'impression', 'success')
     
@@ -1252,17 +1293,17 @@ window.generateInvoicePDF = async (invoiceId) => {
   }
 }
 
-window.generateQuotePDF = async (quoteId) => {
+window.generateQuotePDF = async (quoteId, method = 'html2canvas') => {
   try {
     window.showNotification('Génération du PDF en cours...', 'info')
     
-    const quote = DatabaseService.getQuote(quoteId)
+    const quote = await DatabaseService.getQuote(quoteId)
     if (!quote) {
       window.showNotification('Devis introuvable', 'error')
       return
     }
     
-    const client = DatabaseService.getClient(quote.client_id)
+    const client = await DatabaseService.getClient(quote.client_id)
     if (!client) {
       window.showNotification('Client introuvable', 'error')
       return
@@ -1273,10 +1314,51 @@ window.generateQuotePDF = async (quoteId) => {
       name: DatabaseService.getSetting('company_name') || 'Mon Entreprise',
       email: DatabaseService.getSetting('company_email') || '',
       phone: DatabaseService.getSetting('company_phone') || '',
-      address: DatabaseService.getSetting('company_address') || ''
+      address: DatabaseService.getSetting('company_address') || '',
+      website: DatabaseService.getSetting('company_website') || '',
+      taxNumber: DatabaseService.getSetting('company_tax_number') || '',
+      logo: DatabaseService.getSetting('company_logo') || '',
+      currency: DatabaseService.getSetting('currency') || 'XOF'
     }
     
-    PrintService.printQuote(quote, client, companyInfo)
+    const result = await PDFService.generateQuotePDF(quote, client, companyInfo, { method })
+    
+    window.showNotification(`PDF généré avec succès (${result.method})`, 'success')
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error)
+    window.showNotification('Erreur lors de la génération du PDF', 'error')
+  }
+}
+
+// Print quote function
+window.printQuote = async (quoteId) => {
+  try {
+    const quote = await DatabaseService.getQuote(quoteId)
+    if (!quote) {
+      window.showNotification('Devis non trouvé', 'error')
+      return
+    }
+    
+    const client = await DatabaseService.getClient(quote.client_id)
+    if (!client) {
+      window.showNotification('Client non trouvé', 'error')
+      return
+    }
+    
+    // Get company info from settings
+    const companyInfo = {
+      name: DatabaseService.getSetting('company_name') || 'Mon Entreprise',
+      email: DatabaseService.getSetting('company_email') || '',
+      phone: DatabaseService.getSetting('company_phone') || '',
+      address: DatabaseService.getSetting('company_address') || '',
+      website: DatabaseService.getSetting('company_website') || '',
+      taxNumber: DatabaseService.getSetting('company_tax_number') || '',
+      logo: DatabaseService.getSetting('company_logo') || '',
+      currency: DatabaseService.getSetting('currency') || 'XOF'
+    }
+    
+    PDFService.printQuote(quote, client, companyInfo)
     
     window.showNotification('Devis envoyé à l\'impression', 'success')
     
@@ -1297,9 +1379,18 @@ window.showInvoiceDetails = (invoice) => {
       <div class="flex items-center justify-between p-6 border-b">
         <h3 class="text-lg font-medium text-gray-900">Facture ${invoice.number}</h3>
         <div class="flex items-center space-x-2">
-          <button onclick="window.generateInvoicePDF(${invoice.id})" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-            📄 PDF
-          </button>
+          <div class="relative inline-block text-left">
+            <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center">
+              📄 PDF <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+            <div class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+              <div class="py-1">
+                <button onclick="window.generateInvoicePDF(${invoice.id}, 'html2canvas')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📄 PDF (Haute qualité)</button>
+                <button onclick="window.generateInvoicePDF(${invoice.id}, 'jspdf')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📄 PDF (Rapide)</button>
+                <button onclick="window.printInvoice(${invoice.id})" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🖨️ Imprimer</button>
+              </div>
+            </div>
+          </div>
           <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1367,9 +1458,18 @@ window.showQuoteDetails = (quote) => {
       <div class="flex items-center justify-between p-6 border-b">
         <h3 class="text-lg font-medium text-gray-900">Devis ${quote.number}</h3>
         <div class="flex items-center space-x-2">
-          <button onclick="window.generateQuotePDF(${quote.id})" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-            📄 PDF
-          </button>
+          <div class="relative inline-block text-left">
+            <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center">
+              📄 PDF <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+            <div class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+              <div class="py-1">
+                <button onclick="window.generateQuotePDF(${quote.id}, 'html2canvas')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📄 PDF (Haute qualité)</button>
+                <button onclick="window.generateQuotePDF(${quote.id}, 'jspdf')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📄 PDF (Rapide)</button>
+                <button onclick="window.printQuote(${quote.id})" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🖨️ Imprimer</button>
+              </div>
+            </div>
+          </div>
           <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
