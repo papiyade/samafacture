@@ -1,5 +1,6 @@
 import { I18nService } from '../../shared/services/I18nService.js'
 import { ThemeService } from '../../shared/services/ThemeService.js'
+import { ThemeSelector } from '../../shared/components/ThemeSelector.js'
 
 /**
  * Navigation Component - Main navigation sidebar
@@ -82,11 +83,8 @@ export class Navigation {
           <!-- Footer -->
           <div class="p-4 border-t border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between mb-3">
-              <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                </svg>
-              </button>
+              <!-- Theme Selector -->
+              <div id="nav-theme-selector"></div>
               
               <a href="/settings" data-route="/settings" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,13 +118,8 @@ export class Navigation {
       })
     }
 
-    // Theme toggle
-    const themeButton = document.getElementById('theme-toggle')
-    if (themeButton) {
-      themeButton.addEventListener('click', () => {
-        ThemeService.toggleTheme()
-      })
-    }
+    // Initialize Theme Selector
+    this.initThemeSelector()
 
     // Route changes
     window.addEventListener('popstate', () => {
@@ -180,5 +173,16 @@ export class Navigation {
       }
     })
   }
-}
 
+  initThemeSelector() {
+    const container = document.getElementById('nav-theme-selector')
+    if (container) {
+      this.themeSelector = new ThemeSelector(container, {
+        showLabels: false, // Hide labels in sidebar to save space
+        size: 'medium',
+        position: 'dropdown'
+      })
+      this.themeSelector.init()
+    }
+  }
+}

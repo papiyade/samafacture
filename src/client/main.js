@@ -1,6 +1,7 @@
 import '../shared/styles/main.css'
 import { DatabaseService } from '../shared/services/DatabaseService.js'
 import { PrintService } from './services/PDFService.js'
+import { ThemeService } from '../shared/services/ThemeService.js'
 
 class SamaFactureApp {
   constructor() {
@@ -12,6 +13,9 @@ class SamaFactureApp {
     try {
       // Show loading screen
       this.showLoadingScreen()
+
+      // Initialize theme service
+      ThemeService.init()
 
       // Initialize database
       await DatabaseService.init()
@@ -82,6 +86,10 @@ class SamaFactureApp {
         case 'products':
           const { ProductList } = await import('./pages/products/ProductList.js')
           pageInstance = new ProductList()
+          break
+        case 'settings':
+          const { Settings } = await import('./pages/Settings.js')
+          pageInstance = new Settings()
           break
         case 'license':
           // Simple license page for now

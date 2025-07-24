@@ -1,4 +1,5 @@
 import { I18nService } from '../../shared/services/I18nService.js'
+import { ThemeSelector } from '../../shared/components/ThemeSelector.js'
 
 /**
  * Admin Navigation Component
@@ -51,11 +52,8 @@ export class AdminNavigation {
               </nav>
             </div>
             <div class="flex items-center">
-              <button id="theme-toggle" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              </button>
+              <!-- Theme Selector -->
+              <div id="admin-theme-selector"></div>
             </div>
           </div>
         </div>
@@ -64,13 +62,8 @@ export class AdminNavigation {
   }
 
   attachEventListeners() {
-    // Theme toggle
-    const themeToggle = this.container.querySelector('#theme-toggle')
-    if (themeToggle) {
-      themeToggle.addEventListener('click', () => {
-        document.documentElement.classList.toggle('dark')
-      })
-    }
+    // Initialize Theme Selector
+    this.initThemeSelector()
 
     // Navigation links
     const navLinks = this.container.querySelectorAll('.nav-link')
@@ -99,5 +92,16 @@ export class AdminNavigation {
       }
     })
   }
-}
 
+  initThemeSelector() {
+    const container = document.getElementById('admin-theme-selector')
+    if (container) {
+      this.themeSelector = new ThemeSelector(container, {
+        showLabels: true, // Show labels in admin header
+        size: 'medium',
+        position: 'dropdown'
+      })
+      this.themeSelector.init()
+    }
+  }
+}
