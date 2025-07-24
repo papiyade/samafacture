@@ -43,7 +43,7 @@ export class ProductList {
                 type="text"
                 id="search-input"
                 placeholder="Rechercher un produit..."
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@ export class ProductList {
           </div>
           
           <div class="flex space-x-3">
-            <select id="category-filter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <select id="category-filter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <option value="all">Toutes catégories</option>
               <option value="produit">Produit</option>
               <option value="service">Service</option>
@@ -332,46 +332,7 @@ export class ProductList {
     })
   }
 
-  viewProduct(product) {
-    this.modal = new Modal({
-      title: `Produit: ${product.name}`,
-      size: 'lg',
-      content: `
-        <div class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 class="font-medium text-gray-900 mb-2">Informations générales</h4>
-              <div class="space-y-2 text-sm">
-                <div><span class="font-medium">Nom:</span> ${product.name}</div>
-                <div><span class="font-medium">Description:</span> ${product.description || 'Non renseigné'}</div>
-                <div><span class="font-medium">Catégorie:</span> ${product.category || 'Non renseigné'}</div>
-                <div><span class="font-medium">Unité:</span> ${product.unit || 'pièce'}</div>
-              </div>
-            </div>
-            
-            <div>
-              <h4 class="font-medium text-gray-900 mb-2">Prix et stock</h4>
-              <div class="space-y-2 text-sm">
-                <div><span class="font-medium">Prix:</span> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(product.price || 0)}</div>
-                <div><span class="font-medium">Stock:</span> ${product.stock || 0} ${product.unit || 'pièce'}(s)</div>
-                <div><span class="font-medium">Créé le:</span> ${new Date(product.created_at).toLocaleDateString('fr-FR')}</div>
-                <div><span class="font-medium">Modifié le:</span> ${new Date(product.updated_at).toLocaleDateString('fr-FR')}</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h4 class="font-medium text-gray-900 mb-2">Valeur du stock</h4>
-            <p class="text-2xl font-bold text-green-600">
-              ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format((product.price || 0) * (product.stock || 0))}
-            </p>
-          </div>
-        </div>
-      `
-    })
 
-    this.modal.open()
-  }
 
   viewProduct(product) {
     console.log('viewProduct called with:', product)
@@ -381,33 +342,33 @@ export class ProductList {
         <div class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 class="font-medium text-gray-900 mb-2">Informations générales</h4>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-2">Informations générales</h4>
               <div class="space-y-2 text-sm">
-                <div><span class="font-medium">Nom:</span> ${product.name}</div>
-                <div><span class="font-medium">Prix:</span> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(product.price || 0)}</div>
-                <div><span class="font-medium">Catégorie:</span> ${product.category || 'Non définie'}</div>
-                <div><span class="font-medium">Stock:</span> ${product.stock || 0} unités</div>
+                <div><span class="font-medium text-gray-900 dark:text-white">Nom:</span> <span class="text-gray-700 dark:text-gray-300">${product.name}</span></div>
+                <div><span class="font-medium text-gray-900 dark:text-white">Prix:</span> <span class="text-gray-700 dark:text-gray-300">${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(product.price || 0)}</span></div>
+                <div><span class="font-medium text-gray-900 dark:text-white">Catégorie:</span> <span class="text-gray-700 dark:text-gray-300">${product.category || 'Non définie'}</span></div>
+                <div><span class="font-medium text-gray-900 dark:text-white">Stock:</span> <span class="text-gray-700 dark:text-gray-300">${product.stock || 0} unités</span></div>
               </div>
             </div>
             <div>
-              <h4 class="font-medium text-gray-900 mb-2">Détails</h4>
+              <h4 class="font-medium text-gray-900 dark:text-white mb-2">Détails</h4>
               <div class="space-y-2 text-sm">
-                <div><span class="font-medium">Créé le:</span> ${new Date(product.created_at).toLocaleDateString('fr-FR')}</div>
-                <div><span class="font-medium">Modifié le:</span> ${new Date(product.updated_at).toLocaleDateString('fr-FR')}</div>
+                <div><span class="font-medium text-gray-900 dark:text-white">Créé le:</span> <span class="text-gray-700 dark:text-gray-300">${new Date(product.created_at).toLocaleDateString('fr-FR')}</span></div>
+                <div><span class="font-medium text-gray-900 dark:text-white">Modifié le:</span> <span class="text-gray-700 dark:text-gray-300">${new Date(product.updated_at).toLocaleDateString('fr-FR')}</span></div>
               </div>
             </div>
           </div>
           ${product.description ? `
-            <div class="border-t pt-4">
-              <h4 class="font-medium text-gray-900 mb-2">Description</h4>
-              <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded">${product.description}</p>
+            <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
+              <h4 class="font-medium text-gray-900 dark:text-white mb-2">Description</h4>
+              <p class="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded">${product.description}</p>
             </div>
           ` : ''}
-          <div class="flex justify-end space-x-3 pt-4 border-t">
-            <button class="edit-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
+          <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+            <button class="edit-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
               Modifier
             </button>
-            <button class="close-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <button class="close-btn px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500">
               Fermer
             </button>
           </div>
@@ -448,21 +409,21 @@ export class ProductList {
       title: 'Supprimer le produit',
       content: `
         <div class="text-center">
-          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
+            <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
             </svg>
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">Êtes-vous sûr ?</h3>
-          <p class="text-sm text-gray-500 mb-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Êtes-vous sûr ?</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
             Cette action supprimera définitivement le produit "${product.name}".
             Cette action ne peut pas être annulée.
           </p>
           <div class="flex justify-center space-x-3">
-            <button class="cancel-btn px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            <button class="cancel-btn px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500">
               Annuler
             </button>
-            <button class="delete-btn px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">
+            <button class="delete-btn px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
               Supprimer
             </button>
           </div>

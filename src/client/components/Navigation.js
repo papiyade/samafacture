@@ -83,8 +83,15 @@ export class Navigation {
           <!-- Footer -->
           <div class="p-4 border-t border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between mb-3">
-              <!-- Theme Selector -->
-              <div id="nav-theme-selector"></div>
+              <!-- Theme Toggle Button -->
+              <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Basculer le thème">
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+              </button>
               
               <a href="/settings" data-route="/settings" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,8 +125,13 @@ export class Navigation {
       })
     }
 
-    // Initialize Theme Selector
-    this.initThemeSelector()
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle')
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        this.toggleTheme()
+      })
+    }
 
     // Route changes
     window.addEventListener('popstate', () => {
@@ -174,15 +186,9 @@ export class Navigation {
     })
   }
 
-  initThemeSelector() {
-    const container = document.getElementById('nav-theme-selector')
-    if (container) {
-      this.themeSelector = new ThemeSelector(container, {
-        showLabels: false, // Hide labels in sidebar to save space
-        size: 'medium',
-        position: 'dropdown'
-      })
-      this.themeSelector.init()
-    }
+  toggleTheme() {
+    const currentTheme = ThemeService.getCurrentTheme()
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark'
+    ThemeService.setTheme(newTheme)
   }
 }
