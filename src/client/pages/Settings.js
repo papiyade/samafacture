@@ -19,36 +19,29 @@ export class Settings {
 
   async loadCompanyInfo() {
     try {
-      // Try to get existing company info from database
-      const companies = await DatabaseService.getAll('companies')
-      if (companies.length > 0) {
-        this.companyInfo = companies[0]
-      } else {
-        // Create default company info
-        this.companyInfo = {
-          id: 1,
-          name: 'Mon Entreprise',
-          email: 'contact@monentreprise.com',
-          phone: '+221 XX XXX XX XX',
-          address: 'Dakar, Sénégal',
-          logo: null,
-          website: '',
-          taxNumber: '',
-          currency: 'XOF',
-          language: 'fr'
-        }
-        await DatabaseService.add('companies', this.companyInfo)
+      // Load company info from settings
+      this.companyInfo = {
+        name: DatabaseService.getSetting('company_name') || 'Mon Entreprise',
+        email: DatabaseService.getSetting('company_email') || 'contact@monentreprise.com',
+        phone: DatabaseService.getSetting('company_phone') || '+221 XX XXX XX XX',
+        address: DatabaseService.getSetting('company_address') || 'Dakar, Sénégal',
+        website: DatabaseService.getSetting('company_website') || '',
+        taxNumber: DatabaseService.getSetting('company_tax_number') || '',
+        logo: DatabaseService.getSetting('company_logo') || null,
+        currency: DatabaseService.getSetting('currency') || 'XOF',
+        language: DatabaseService.getSetting('language') || 'fr'
       }
     } catch (error) {
       console.error('Error loading company info:', error)
+      // Default values in case of error
       this.companyInfo = {
         name: 'Mon Entreprise',
         email: 'contact@monentreprise.com',
         phone: '+221 XX XXX XX XX',
         address: 'Dakar, Sénégal',
-        logo: null,
         website: '',
         taxNumber: '',
+        logo: null,
         currency: 'XOF',
         language: 'fr'
       }
@@ -337,11 +330,23 @@ export class Settings {
         currency: document.getElementById('app-currency').value
       }
 
-      // Update company info
+      // Update company info in memory
       this.companyInfo = { ...this.companyInfo, ...formData }
       
-      // Save to database
-      await DatabaseService.update('companies', this.companyInfo.id, this.companyInfo)
+      // Save each setting individually
+      DatabaseService.setSetting('company_name', formData.name)
+      DatabaseService.setSetting('company_email', formData.email)
+      DatabaseService.setSetting('company_phone', formData.phone)
+      DatabaseService.setSetting('company_website', formData.website)
+      DatabaseService.setSetting('company_address', formData.address)
+      DatabaseService.setSetting('company_tax_number', formData.taxNumber)
+      DatabaseService.setSetting('language', formData.language)
+      DatabaseService.setSetting('currency', formData.currency)
+      
+      // Save logo if it exists
+      if (this.companyInfo.logo) {
+        DatabaseService.setSetting('company_logo', this.companyInfo.logo)
+      }
       
       // Show success notification
       NotificationService.show('Informations sauvegardées avec succès', 'success')
@@ -373,11 +378,17 @@ export class Settings {
       const logoUrl = e.target.result
       this.companyInfo.logo = logoUrl
       
+      // Save logo to settings immediately
+      DatabaseService.setSetting('company_logo', logoUrl)
+      
       // Update preview
       const preview = document.getElementById('logo-preview')
       if (preview) {
         preview.innerHTML = `<img src="${logoUrl}" alt="Logo" class="h-full w-full object-cover rounded-lg">`
       }
+      
+      // Show success notification
+      NotificationService.show('Logo mis à jour avec succès', 'success')
     }
     reader.readAsDataURL(file)
   }
@@ -400,11 +411,11 @@ export class Settings {
     try {
       // Get all data from database
       const data = {
-        companies: await DatabaseService.getAll('companies'),
-        clients: await DatabaseService.getAll('clients'),
-        products: await DatabaseService.getAll('products'),
-        invoices: await DatabaseService.getAll('invoices'),
-        quotes: await DatabaseService.getAll('quotes'),
+        settings: DatabaseService.getItem('settings') || {},
+        clients: DatabaseService.getClients(),
+        products: DatabaseService.getProducts(),
+        invoices: DatabaseService.getInvoices(),
+        quotes: DatabaseService.getQuotes(),
         exportDate: new Date().toISOString()
       }
 
@@ -456,11 +467,15 @@ export class Settings {
           onClick: async () => {
             try {
               // Clear all data
-              await DatabaseService.clear('companies')
-              await DatabaseService.clear('clients')
-              await DatabaseService.clear('products')
-              await DatabaseService.clear('invoices')
-              await DatabaseService.clear('quotes')
+              localStorage.clear()
+              
+              // Reinitialize with default settings
+              DatabaseService.setSetting('company_name', 'Mon Entreprise')
+              DatabaseService.setSetting('company_email', 'contact@monentreprise.com')
+              DatabaseService.setSetting('company_phone', '+221 XX XXX XX XX')
+              DatabaseService.setSetting('company_address', 'Dakar, Sénégal')
+              DatabaseService.setSetting('currency', 'XOF')
+              DatabaseService.setSetting('language', 'fr')
               
               modal.close()
               NotificationService.show('Application réinitialisée avec succès', 'success')
@@ -485,4 +500,3 @@ export class Settings {
     // Cleanup if needed
   }
 }
-
