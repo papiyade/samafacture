@@ -16,11 +16,11 @@ export class AnalyticsService {
     // Calcul des revenus (factures payées uniquement)
     const totalRevenue = invoices
       .filter(invoice => invoice.status === 'paid')
-      .reduce((sum, invoice) => sum + (invoice.total || 0), 0)
+      .reduce((sum, invoice) => sum + (parseFloat(invoice.total) || 0), 0)
     
     // Calcul des dépenses
     const totalExpenses = expenses
-      .reduce((sum, expense) => sum + (expense.amount || 0), 0)
+      .reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0)
     
     // Bénéfice net
     const netProfit = totalRevenue - totalExpenses
@@ -28,7 +28,7 @@ export class AnalyticsService {
     // Nombre de factures
     const invoiceCount = invoices.length
     const paidInvoiceCount = invoices.filter(i => i.status === 'paid').length
-    const pendingInvoiceCount = invoices.filter(i => i.status === 'pending').length
+    const pendingInvoiceCount = invoices.filter(i => i.status === 'sent').length
     const overdueInvoiceCount = invoices.filter(i => i.status === 'overdue').length
     
     // Nombre de devis
@@ -91,13 +91,15 @@ export class AnalyticsService {
     
     expenses.forEach(expense => {
       const category = expense.category || 'Autres'
-      categories[category] = (categories[category] || 0) + expense.amount
+      categories[category] = (categories[category] || 0) + (parseFloat(expense.amount) || 0)
     })
+    
+    const totalAmount = Object.values(categories).reduce((sum, amount) => sum + amount, 0)
     
     return Object.entries(categories).map(([category, amount]) => ({
       category,
       amount,
-      percentage: expenses.length > 0 ? (amount / expenses.reduce((sum, e) => sum + e.amount, 0)) * 100 : 0
+      percentage: totalAmount > 0 ? (amount / totalAmount) * 100 : 0
     })).sort((a, b) => b.amount - a.amount)
   }
   
@@ -113,7 +115,7 @@ export class AnalyticsService {
     
     invoices.forEach(invoice => {
       const clientId = invoice.client_id
-      clientRevenue[clientId] = (clientRevenue[clientId] || 0) + invoice.total
+      clientRevenue[clientId] = (clientRevenue[clientId] || 0) + (parseFloat(invoice.total) || 0)
     })
     
     return Object.entries(clientRevenue)
@@ -278,4 +280,3 @@ export class AnalyticsService {
     return `${value.toFixed(decimals)}%`
   }
 }
-

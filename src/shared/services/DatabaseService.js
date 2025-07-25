@@ -52,6 +52,9 @@ export class DatabaseService {
     if (!this.getItem('quotes')) {
       this.setItem('quotes', [])
     }
+    if (!this.getItem('expenses')) {
+      this.setItem('expenses', [])
+    }
   }
 
   static getItem(key) {

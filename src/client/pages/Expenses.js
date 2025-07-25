@@ -1,27 +1,21 @@
 import { DatabaseService } from '../../shared/services/DatabaseService.js'
-import { Modal } from '../../shared/components/Modal.js'
-import { NotificationService } from '../../shared/services/NotificationService.js'
 
-/**
- * Expenses Page - Gestion des dépenses
- */
-export class Expenses {
+export class ExpensesPage {
   constructor() {
-    this.container = null
     this.expenses = []
+    this.filteredExpenses = []
     this.categories = []
-    this.currentExpense = null
-    this.filters = {
-      category: '',
-      startDate: '',
-      endDate: '',
-      search: ''
-    }
+    this.currentFilter = 'all'
+    this.searchTerm = ''
+    this.dateFilter = 'all'
+    this.container = null
+    this.isModalOpen = false
+    this.editingExpense = null
   }
 
   async init() {
     await this.loadData()
-    console.log('✅ Expenses page initialized')
+    this.filteredExpenses = [...this.expenses]
   }
 
   async loadData() {
@@ -30,222 +24,344 @@ export class Expenses {
       this.categories = DatabaseService.getExpenseCategories()
     } catch (error) {
       console.error('Error loading expenses data:', error)
-      NotificationService.show('Erreur lors du chargement des données', 'error')
+      this.expenses = []
+      this.categories = []
     }
   }
 
   async render() {
-    await this.loadData()
+    await this.init()
     
     this.container = document.createElement('div')
     this.container.className = 'p-6'
     this.container.innerHTML = `
-      <div class="expenses-page">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Gestion des Dépenses</h1>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Suivez et gérez toutes vos dépenses professionnelles
-            </p>
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Gestion des Dépenses</h1>
+        <p class="text-gray-600 dark:text-gray-400">Suivez et gérez toutes vos dépenses d'entreprise</p>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+              <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Dépenses</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white" id="total-expenses">0 XOF</p>
+            </div>
           </div>
-          <div class="mt-4 sm:mt-0">
-            <button id="add-expense-btn" class="btn-primary">
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Nombre de Dépenses</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white" id="total-count">0</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+              <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Moyenne par Dépense</p>
+              <p class="text-2xl font-semibold text-gray-900 dark:text-white" id="average-expense">0 XOF</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Actions -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        <div class="p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row gap-4">
+              <!-- Search -->
+              <div class="relative">
+                <input
+                  type="text"
+                  id="search-expenses"
+                  placeholder="Rechercher une dépense..."
+                  class="pl-10 pr-4 py-2 w-64 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                >
+                <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+
+              <!-- Category Filter -->
+              <select id="category-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                <option value="all">Toutes les catégories</option>
+              </select>
+
+              <!-- Date Filter -->
+              <select id="date-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                <option value="all">Toutes les dates</option>
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+                <option value="year">Cette année</option>
+              </select>
+            </div>
+
+            <!-- Add Expense Button -->
+            <button
+              id="add-expense-btn"
+              class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+            >
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
               </svg>
-              Nouvelle Dépense
+              Ajouter une dépense
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- Filters -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Rechercher
-              </label>
-              <input type="text" id="search-filter" placeholder="Description, fournisseur..."
-                class="input-field">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Catégorie
-              </label>
-              <select id="category-filter" class="input-field">
-                <option value="">Toutes les catégories</option>
-                ${this.categories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Date début
-              </label>
-              <input type="date" id="start-date-filter" class="input-field">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Date fin
-              </label>
-              <input type="date" id="end-date-filter" class="input-field">
-            </div>
-          </div>
-          <div class="mt-4 flex justify-end space-x-2">
-            <button id="clear-filters-btn" class="btn-secondary">
-              Effacer les filtres
-            </button>
-            <button id="apply-filters-btn" class="btn-primary">
-              Appliquer
-            </button>
-          </div>
+      <!-- Expenses Table -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Liste des Dépenses</h3>
         </div>
-
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Dépenses</p>
-                <p class="text-2xl font-semibold text-gray-900 dark:text-white" id="total-expenses">
-                  ${this.formatCurrency(this.getTotalExpenses())}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Nombre de Dépenses</p>
-                <p class="text-2xl font-semibold text-gray-900 dark:text-white" id="expenses-count">
-                  ${this.getFilteredExpenses().length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                  </svg>
-                </div>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Dépense Moyenne</p>
-                <p class="text-2xl font-semibold text-gray-900 dark:text-white" id="average-expense">
-                  ${this.formatCurrency(this.getAverageExpense())}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Catégorie</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fournisseur</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Montant</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <!-- Expenses will be inserted here -->
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        <!-- Expenses Table -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Liste des Dépenses</h3>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Catégorie
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Fournisseur
-                  </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Montant
-                  </th>
-                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody id="expenses-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                ${this.renderExpensesRows()}
-              </tbody>
-            </table>
-          </div>
-          ${this.getFilteredExpenses().length === 0 ? `
-            <div class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-              </svg>
-              <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Aucune dépense</h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Commencez par ajouter votre première dépense.</p>
-            </div>
-          ` : ''}
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden text-center py-12">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 dark:bg-gray-700">
+          <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+        </div>
+        <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">Aucune dépense trouvée</h3>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Commencez par ajouter votre première dépense pour suivre vos coûts.</p>
+        <div class="mt-6">
+          <button
+            id="add-first-expense-btn"
+            class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+          >
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Ajouter une dépense
+          </button>
         </div>
       </div>
     `
-    
+
     this.attachEventListeners()
+    this.updateSummaryCards()
+    this.populateCategoryFilter()
+    this.renderExpensesTable()
+    this.createModal()
+
+    // Make this instance globally accessible for onclick handlers
+    window.expensesPage = this
+
     return this.container
   }
 
-  renderExpensesRows() {
-    const filteredExpenses = this.getFilteredExpenses()
+  attachEventListeners() {
+    // Search functionality
+    const searchInput = document.getElementById('search-expenses')
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.searchTerm = e.target.value.toLowerCase()
+        this.applyFilters()
+      })
+    }
+
+    // Category filter
+    const categoryFilter = document.getElementById('category-filter')
+    if (categoryFilter) {
+      categoryFilter.addEventListener('change', (e) => {
+        this.currentFilter = e.target.value
+        this.applyFilters()
+      })
+    }
+
+    // Date filter
+    const dateFilter = document.getElementById('date-filter')
+    if (dateFilter) {
+      dateFilter.addEventListener('change', (e) => {
+        this.dateFilter = e.target.value
+        this.applyFilters()
+      })
+    }
+
+    // Add expense buttons
+    const addExpenseBtn = document.getElementById('add-expense-btn')
+    const addFirstExpenseBtn = document.getElementById('add-first-expense-btn')
     
-    return filteredExpenses.map(expense => `
-      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+    if (addExpenseBtn) {
+      addExpenseBtn.addEventListener('click', () => this.showAddExpenseModal())
+    }
+    if (addFirstExpenseBtn) {
+      addFirstExpenseBtn.addEventListener('click', () => this.showAddExpenseModal())
+    }
+  }
+
+  populateCategoryFilter() {
+    const categoryFilter = document.getElementById('category-filter')
+    if (categoryFilter && this.categories.length > 0) {
+      // Clear existing options except "all"
+      categoryFilter.innerHTML = '<option value="all">Toutes les catégories</option>'
+      
+      this.categories.forEach(category => {
+        const option = document.createElement('option')
+        option.value = category
+        option.textContent = category
+        categoryFilter.appendChild(option)
+      })
+    }
+  }
+
+  applyFilters() {
+    let filtered = [...this.expenses]
+
+    // Apply search filter
+    if (this.searchTerm) {
+      filtered = filtered.filter(expense => 
+        expense.description?.toLowerCase().includes(this.searchTerm) ||
+        expense.supplier?.toLowerCase().includes(this.searchTerm) ||
+        expense.category?.toLowerCase().includes(this.searchTerm)
+      )
+    }
+
+    // Apply category filter
+    if (this.currentFilter && this.currentFilter !== 'all') {
+      filtered = filtered.filter(expense => expense.category === this.currentFilter)
+    }
+
+    // Apply date filter
+    if (this.dateFilter && this.dateFilter !== 'all') {
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      
+      filtered = filtered.filter(expense => {
+        const expenseDate = new Date(expense.date)
+        
+        switch (this.dateFilter) {
+          case 'today':
+            return expenseDate >= today
+          case 'week':
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+            return expenseDate >= weekAgo
+          case 'month':
+            return expenseDate.getMonth() === now.getMonth() && expenseDate.getFullYear() === now.getFullYear()
+          case 'year':
+            return expenseDate.getFullYear() === now.getFullYear()
+          default:
+            return true
+        }
+      })
+    }
+
+    this.filteredExpenses = filtered
+    this.renderExpensesTable()
+    this.updateSummaryCards()
+  }
+
+  updateSummaryCards() {
+    const totalExpenses = this.filteredExpenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0)
+    const count = this.filteredExpenses.length
+    const average = count > 0 ? totalExpenses / count : 0
+
+    const totalElement = document.getElementById('total-expenses')
+    const countElement = document.getElementById('total-count')
+    const averageElement = document.getElementById('average-expense')
+
+    if (totalElement) totalElement.textContent = `${totalExpenses.toLocaleString('fr-FR')} XOF`
+    if (countElement) countElement.textContent = count.toString()
+    if (averageElement) averageElement.textContent = `${Math.round(average).toLocaleString('fr-FR')} XOF`
+  }
+
+  renderExpensesTable() {
+    const tableBody = document.getElementById('expenses-table-body')
+    const emptyState = document.getElementById('empty-state')
+    const tableContainer = tableBody?.closest('.bg-white')
+    
+    if (!tableBody) return
+
+    if (this.filteredExpenses.length === 0) {
+      tableBody.innerHTML = ''
+      if (emptyState) emptyState.classList.remove('hidden')
+      if (tableContainer) tableContainer.classList.add('hidden')
+      return
+    }
+
+    if (emptyState) emptyState.classList.add('hidden')
+    if (tableContainer) tableContainer.classList.remove('hidden')
+
+    tableBody.innerHTML = this.filteredExpenses.map(expense => `
+      <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
           ${new Date(expense.date).toLocaleDateString('fr-FR')}
         </td>
         <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
-          <div class="max-w-xs truncate" title="${expense.description || ''}">
-            ${expense.description || '-'}
-          </div>
+          <div class="font-medium">${expense.description || 'N/A'}</div>
+          ${expense.notes ? `<div class="text-gray-500 dark:text-gray-400 text-xs mt-1">${expense.notes}</div>` : ''}
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-            ${expense.category || 'Autres'}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            ${expense.category || 'N/A'}
           </span>
         </td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-          ${expense.supplier || '-'}
+          ${expense.supplier || 'N/A'}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-          ${this.formatCurrency(expense.amount)}
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
+          ${parseFloat(expense.amount || 0).toLocaleString('fr-FR')} XOF
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <div class="flex justify-end space-x-2">
-            <button onclick="window.expensesPage.editExpense(${expense.id})" 
-              class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <div class="flex space-x-3">
+            <button
+              onclick="window.expensesPage.editExpense(${expense.id})"
+              class="inline-flex items-center px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
               </svg>
+              Modifier
             </button>
-            <button onclick="window.expensesPage.deleteExpense(${expense.id})" 
-              class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button
+              onclick="window.expensesPage.deleteExpense(${expense.id})"
+              class="inline-flex items-center px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
               </svg>
+              Supprimer
             </button>
           </div>
         </td>
@@ -253,312 +369,373 @@ export class Expenses {
     `).join('')
   }
 
-  attachEventListeners() {
-    // Add expense button
-    const addBtn = document.getElementById('add-expense-btn')
-    if (addBtn) {
-      addBtn.addEventListener('click', () => this.showExpenseModal())
-    }
+  createModal() {
+    // Create modal HTML
+    const modalHTML = `
+      <div id="expense-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800">
+          <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white" id="modal-title">
+                Ajouter une dépense
+              </h3>
+              <button
+                id="close-modal"
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
 
-    // Filter buttons
-    const applyFiltersBtn = document.getElementById('apply-filters-btn')
-    if (applyFiltersBtn) {
-      applyFiltersBtn.addEventListener('click', () => this.applyFilters())
-    }
+            <!-- Modal Body -->
+            <form id="expense-form" class="mt-6 space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Description -->
+                <div class="md:col-span-2">
+                  <label for="expense-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description *
+                  </label>
+                  <input
+                    type="text"
+                    id="expense-description"
+                    name="description"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="Ex: Achat de fournitures de bureau"
+                  >
+                </div>
 
-    const clearFiltersBtn = document.getElementById('clear-filters-btn')
-    if (clearFiltersBtn) {
-      clearFiltersBtn.addEventListener('click', () => this.clearFilters())
-    }
+                <!-- Amount -->
+                <div>
+                  <label for="expense-amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Montant (XOF) *
+                  </label>
+                  <input
+                    type="number"
+                    id="expense-amount"
+                    name="amount"
+                    required
+                    min="0"
+                    step="0.01"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="0.00"
+                  >
+                </div>
 
-    // Search input with debounce
-    const searchInput = document.getElementById('search-filter')
-    if (searchInput) {
-      let timeout
-      searchInput.addEventListener('input', () => {
-        clearTimeout(timeout)
-        timeout = setTimeout(() => this.applyFilters(), 300)
-      })
-    }
+                <!-- Date -->
+                <div>
+                  <label for="expense-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="expense-date"
+                    name="date"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  >
+                </div>
 
-    // Make this instance globally accessible for onclick handlers
-    window.expensesPage = this
+                <!-- Category -->
+                <div>
+                  <label for="expense-category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Catégorie *
+                  </label>
+                  <select
+                    id="expense-category"
+                    name="category"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Sélectionner une catégorie</option>
+                  </select>
+                </div>
+
+                <!-- Supplier -->
+                <div>
+                  <label for="expense-supplier" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Fournisseur
+                  </label>
+                  <input
+                    type="text"
+                    id="expense-supplier"
+                    name="supplier"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="Nom du fournisseur"
+                  >
+                </div>
+
+                <!-- Payment Method -->
+                <div>
+                  <label for="expense-payment-method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Mode de paiement
+                  </label>
+                  <select
+                    id="expense-payment-method"
+                    name="payment_method"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Sélectionner</option>
+                    <option value="cash">Espèces</option>
+                    <option value="bank_transfer">Virement bancaire</option>
+                    <option value="check">Chèque</option>
+                    <option value="card">Carte bancaire</option>
+                    <option value="mobile_money">Mobile Money</option>
+                  </select>
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                  <label for="expense-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Notes
+                  </label>
+                  <textarea
+                    id="expense-notes"
+                    name="notes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                    placeholder="Notes additionnelles..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Modal Footer -->
+              <div class="flex items-center justify-end pt-6 border-t border-gray-200 dark:border-gray-700 space-x-4">
+                <button
+                  type="button"
+                  id="cancel-expense"
+                  class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800"
+                >
+                  <span id="submit-text">Ajouter la dépense</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `
+
+    // Add modal to the page
+    document.body.insertAdjacentHTML('beforeend', modalHTML)
+
+    // Set up modal event listeners
+    this.setupModalEventListeners()
   }
 
-  showExpenseModal(expense = null) {
-    this.currentExpense = expense
-    const isEdit = !!expense
+  setupModalEventListeners() {
+    const modal = document.getElementById('expense-modal')
+    const closeBtn = document.getElementById('close-modal')
+    const cancelBtn = document.getElementById('cancel-expense')
+    const form = document.getElementById('expense-form')
 
-    const modal = Modal.create({
-      title: isEdit ? 'Modifier la Dépense' : 'Nouvelle Dépense',
-      content: `
-        <form id="expense-form" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Date *
-              </label>
-              <input type="date" id="expense-date" required class="input-field"
-                value="${expense?.date || new Date().toISOString().split('T')[0]}">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Montant *
-              </label>
-              <input type="number" id="expense-amount" required step="0.01" min="0" 
-                placeholder="0.00" class="input-field" value="${expense?.amount || ''}">
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Catégorie *
-            </label>
-            <select id="expense-category" required class="input-field">
-              <option value="">Sélectionner une catégorie</option>
-              ${this.categories.map(cat => `
-                <option value="${cat}" ${expense?.category === cat ? 'selected' : ''}>${cat}</option>
-              `).join('')}
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Description *
-            </label>
-            <textarea id="expense-description" required rows="3" 
-              placeholder="Description de la dépense..." class="input-field">${expense?.description || ''}</textarea>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Fournisseur
-            </label>
-            <input type="text" id="expense-supplier" placeholder="Nom du fournisseur" 
-              class="input-field" value="${expense?.supplier || ''}">
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Mode de paiement
-            </label>
-            <select id="expense-payment-method" class="input-field">
-              <option value="">Sélectionner</option>
-              <option value="cash" ${expense?.payment_method === 'cash' ? 'selected' : ''}>Espèces</option>
-              <option value="card" ${expense?.payment_method === 'card' ? 'selected' : ''}>Carte bancaire</option>
-              <option value="transfer" ${expense?.payment_method === 'transfer' ? 'selected' : ''}>Virement</option>
-              <option value="check" ${expense?.payment_method === 'check' ? 'selected' : ''}>Chèque</option>
-            </select>
-          </div>
-        </form>
-      `,
-      actions: [
-        {
-          label: 'Annuler',
-          variant: 'secondary',
-          onClick: () => modal.close()
-        },
-        {
-          label: isEdit ? 'Modifier' : 'Ajouter',
-          variant: 'primary',
-          onClick: () => this.saveExpense(modal)
-        }
-      ]
+    // Close modal events
+    closeBtn?.addEventListener('click', () => this.hideModal())
+    cancelBtn?.addEventListener('click', () => this.hideModal())
+    
+    // Close modal when clicking outside
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.hideModal()
+      }
     })
 
-    modal.show()
+    // Form submission
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault()
+      this.handleFormSubmit()
+    })
+
+    // Set today's date as default
+    const dateInput = document.getElementById('expense-date')
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().split('T')[0]
+    }
+
+    // Populate categories in modal
+    this.populateModalCategories()
   }
 
-  async saveExpense(modal) {
+  populateModalCategories() {
+    const categorySelect = document.getElementById('expense-category')
+    if (categorySelect && this.categories.length > 0) {
+      categorySelect.innerHTML = '<option value="">Sélectionner une catégorie</option>'
+      
+      this.categories.forEach(category => {
+        const option = document.createElement('option')
+        option.value = category
+        option.textContent = category
+        categorySelect.appendChild(option)
+      })
+    }
+  }
+
+  showAddExpenseModal() {
+    this.editingExpense = null
+    const modal = document.getElementById('expense-modal')
+    const title = document.getElementById('modal-title')
+    const submitText = document.getElementById('submit-text')
+    const form = document.getElementById('expense-form')
+
+    if (title) title.textContent = 'Ajouter une dépense'
+    if (submitText) submitText.textContent = 'Ajouter la dépense'
+    if (form) form.reset()
+
+    // Set today's date as default
+    const dateInput = document.getElementById('expense-date')
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().split('T')[0]
+    }
+
+    if (modal) {
+      modal.classList.remove('hidden')
+      this.isModalOpen = true
+      
+      // Focus on first input
+      const firstInput = document.getElementById('expense-description')
+      if (firstInput) {
+        setTimeout(() => firstInput.focus(), 100)
+      }
+    }
+  }
+
+  hideModal() {
+    const modal = document.getElementById('expense-modal')
+    if (modal) {
+      modal.classList.add('hidden')
+      this.isModalOpen = false
+      this.editingExpense = null
+    }
+  }
+
+  async handleFormSubmit() {
+    const form = document.getElementById('expense-form')
+    if (!form) return
+
+    const formData = new FormData(form)
+    const expenseData = {
+      description: formData.get('description'),
+      amount: parseFloat(formData.get('amount')),
+      date: formData.get('date'),
+      category: formData.get('category'),
+      supplier: formData.get('supplier') || '',
+      payment_method: formData.get('payment_method') || '',
+      notes: formData.get('notes') || ''
+    }
+
+    // Validation
+    if (!expenseData.description || !expenseData.amount || !expenseData.date || !expenseData.category) {
+      alert('Veuillez remplir tous les champs obligatoires.')
+      return
+    }
+
+    if (expenseData.amount <= 0) {
+      alert('Le montant doit être supérieur à 0.')
+      return
+    }
+
     try {
-      const form = document.getElementById('expense-form')
-      if (!form.checkValidity()) {
-        form.reportValidity()
-        return
-      }
-
-      const expenseData = {
-        date: document.getElementById('expense-date').value,
-        amount: parseFloat(document.getElementById('expense-amount').value),
-        category: document.getElementById('expense-category').value,
-        description: document.getElementById('expense-description').value,
-        supplier: document.getElementById('expense-supplier').value,
-        payment_method: document.getElementById('expense-payment-method').value
-      }
-
-      if (this.currentExpense) {
+      if (this.editingExpense) {
         // Update existing expense
-        DatabaseService.updateExpense(this.currentExpense.id, expenseData)
-        NotificationService.show('Dépense modifiée avec succès', 'success')
+        DatabaseService.updateExpense(this.editingExpense.id, expenseData)
+        this.showNotification('Dépense modifiée avec succès!', 'success')
       } else {
         // Add new expense
         DatabaseService.addExpense(expenseData)
-        NotificationService.show('Dépense ajoutée avec succès', 'success')
+        this.showNotification('Dépense ajoutée avec succès!', 'success')
       }
 
+      // Refresh data and UI
       await this.loadData()
-      this.refreshView()
-      modal.close()
+      this.applyFilters()
+      this.hideModal()
 
     } catch (error) {
       console.error('Error saving expense:', error)
-      NotificationService.show('Erreur lors de la sauvegarde', 'error')
+      this.showNotification('Erreur lors de la sauvegarde de la dépense.', 'error')
     }
   }
 
   editExpense(id) {
-    const expense = this.expenses.find(e => e.id === id)
-    if (expense) {
-      this.showExpenseModal(expense)
+    const expense = DatabaseService.getExpense(id)
+    if (!expense) {
+      this.showNotification('Dépense introuvable.', 'error')
+      return
+    }
+
+    this.editingExpense = expense
+    
+    // Show modal
+    const modal = document.getElementById('expense-modal')
+    const title = document.getElementById('modal-title')
+    const submitText = document.getElementById('submit-text')
+
+    if (title) title.textContent = 'Modifier la dépense'
+    if (submitText) submitText.textContent = 'Modifier la dépense'
+
+    // Populate form with expense data
+    document.getElementById('expense-description').value = expense.description || ''
+    document.getElementById('expense-amount').value = expense.amount || ''
+    document.getElementById('expense-date').value = expense.date || ''
+    document.getElementById('expense-category').value = expense.category || ''
+    document.getElementById('expense-supplier').value = expense.supplier || ''
+    document.getElementById('expense-payment-method').value = expense.payment_method || ''
+    document.getElementById('expense-notes').value = expense.notes || ''
+
+    if (modal) {
+      modal.classList.remove('hidden')
+      this.isModalOpen = true
     }
   }
 
   deleteExpense(id) {
-    const expense = this.expenses.find(e => e.id === id)
-    if (!expense) return
-
-    const modal = Modal.create({
-      title: 'Supprimer la Dépense',
-      content: `
-        <div class="text-center">
-          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
-            <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Êtes-vous sûr ?
-          </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            Cette action supprimera définitivement la dépense "${expense.description}". Cette action ne peut pas être annulée.
-          </p>
-        </div>
-      `,
-      actions: [
-        {
-          label: 'Annuler',
-          variant: 'secondary',
-          onClick: () => modal.close()
-        },
-        {
-          label: 'Supprimer',
-          variant: 'danger',
-          onClick: async () => {
-            try {
-              DatabaseService.deleteExpense(id)
-              await this.loadData()
-              this.refreshView()
-              modal.close()
-              NotificationService.show('Dépense supprimée avec succès', 'success')
-            } catch (error) {
-              console.error('Error deleting expense:', error)
-              NotificationService.show('Erreur lors de la suppression', 'error')
-            }
-          }
-        }
-      ]
-    })
-
-    modal.show()
-  }
-
-  applyFilters() {
-    this.filters = {
-      search: document.getElementById('search-filter')?.value || '',
-      category: document.getElementById('category-filter')?.value || '',
-      startDate: document.getElementById('start-date-filter')?.value || '',
-      endDate: document.getElementById('end-date-filter')?.value || ''
-    }
-    this.refreshView()
-  }
-
-  clearFilters() {
-    this.filters = { category: '', startDate: '', endDate: '', search: '' }
-    
-    // Clear form inputs
-    const searchInput = document.getElementById('search-filter')
-    const categorySelect = document.getElementById('category-filter')
-    const startDateInput = document.getElementById('start-date-filter')
-    const endDateInput = document.getElementById('end-date-filter')
-    
-    if (searchInput) searchInput.value = ''
-    if (categorySelect) categorySelect.value = ''
-    if (startDateInput) startDateInput.value = ''
-    if (endDateInput) endDateInput.value = ''
-    
-    this.refreshView()
-  }
-
-  getFilteredExpenses() {
-    let filtered = [...this.expenses]
-
-    // Filter by search
-    if (this.filters.search) {
-      const search = this.filters.search.toLowerCase()
-      filtered = filtered.filter(expense => 
-        (expense.description || '').toLowerCase().includes(search) ||
-        (expense.supplier || '').toLowerCase().includes(search) ||
-        (expense.category || '').toLowerCase().includes(search)
-      )
-    }
-
-    // Filter by category
-    if (this.filters.category) {
-      filtered = filtered.filter(expense => expense.category === this.filters.category)
-    }
-
-    // Filter by date range
-    if (this.filters.startDate) {
-      filtered = filtered.filter(expense => expense.date >= this.filters.startDate)
-    }
-    if (this.filters.endDate) {
-      filtered = filtered.filter(expense => expense.date <= this.filters.endDate)
-    }
-
-    // Sort by date (newest first)
-    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
-  }
-
-  getTotalExpenses() {
-    return this.getFilteredExpenses().reduce((sum, expense) => sum + (expense.amount || 0), 0)
-  }
-
-  getAverageExpense() {
-    const filtered = this.getFilteredExpenses()
-    return filtered.length > 0 ? this.getTotalExpenses() / filtered.length : 0
-  }
-
-  formatCurrency(amount) {
-    const currency = DatabaseService.getSetting('currency') || 'XOF'
-    const currencySymbols = {
-      'XOF': 'FCFA',
-      'EUR': '€',
-      'USD': '$'
-    }
-    return `${amount.toLocaleString('fr-FR')} ${currencySymbols[currency] || currency}`
-  }
-
-  refreshView() {
-    // Update summary cards
-    const totalExpensesEl = document.getElementById('total-expenses')
-    const expensesCountEl = document.getElementById('expenses-count')
-    const averageExpenseEl = document.getElementById('average-expense')
-
-    if (totalExpensesEl) totalExpensesEl.textContent = this.formatCurrency(this.getTotalExpenses())
-    if (expensesCountEl) expensesCountEl.textContent = this.getFilteredExpenses().length
-    if (averageExpenseEl) averageExpenseEl.textContent = this.formatCurrency(this.getAverageExpense())
-
-    // Update table
-    const tableBody = document.getElementById('expenses-table-body')
-    if (tableBody) {
-      tableBody.innerHTML = this.renderExpensesRows()
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette dépense ? Cette action est irréversible.')) {
+      try {
+        DatabaseService.deleteExpense(id)
+        this.showNotification('Dépense supprimée avec succès!', 'success')
+        
+        // Refresh data and UI
+        this.loadData().then(() => {
+          this.applyFilters()
+        })
+      } catch (error) {
+        console.error('Error deleting expense:', error)
+        this.showNotification('Erreur lors de la suppression de la dépense.', 'error')
+      }
     }
   }
 
-  destroy() {
-    // Clean up global reference
-    if (window.expensesPage === this) {
-      delete window.expensesPage
-    }
+  showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div')
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
+      type === 'success' ? 'bg-green-500 text-white' :
+      type === 'error' ? 'bg-red-500 text-white' :
+      'bg-blue-500 text-white'
+    }`
+    notification.textContent = message
+
+    document.body.appendChild(notification)
+
+    // Animate in
+    setTimeout(() => {
+      notification.classList.remove('translate-x-full')
+    }, 100)
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.add('translate-x-full')
+      setTimeout(() => {
+        document.body.removeChild(notification)
+      }, 300)
+    }, 3000)
   }
 }
