@@ -97,6 +97,16 @@ export class CompanyService {
       // Validate required fields
       this.validateCompanyData(companyData)
 
+      // Double-check email uniqueness just before insertion
+      const emailCheck = AdminDatabaseService.queryAll(
+        'SELECT id FROM companies WHERE email = ?',
+        [companyData.email]
+      )
+      
+      if (emailCheck && emailCheck.length > 0) {
+        throw new Error('Cette adresse email est déjà utilisée')
+      }
+
       // Get existing usernames to avoid duplicates
       const existingUsernames = this.getExistingUsernames()
 
@@ -147,6 +157,10 @@ export class CompanyService {
       ])
 
       const companyId = AdminDatabaseService.getLastInsertId()
+      
+      if (!companyId) {
+        throw new Error('Erreur lors de la création de l\'entreprise - ID non récupéré')
+      }
 
       // Create default license
       await this.createDefaultLicense(companyId, companyData.licenseType || 'TRIAL')
@@ -165,6 +179,12 @@ export class CompanyService {
       }
     } catch (error) {
       console.error('❌ Error creating company:', error)
+      
+      // Handle specific SQLite errors
+      if (error.message && error.message.includes('UNIQUE constraint failed: companies.email')) {
+        throw new Error('Cette adresse email est déjà utilisée')
+      }
+      
       throw error
     }
   }
@@ -185,7 +205,7 @@ export class CompanyService {
 
       // Validate updates
       if (updates.email && updates.email !== currentCompany.email) {
-        this.validateEmail(updates.email)
+        this.validateEmailForUpdate(updates.email, id)
       }
 
       // Prepare update fields
@@ -291,6 +311,80 @@ export class CompanyService {
   }
 
   /**
+   * Suspend a company
+   * @param {number} id - Company ID
+   * @returns {Object} Updated company
+   */
+  static async suspendCompany(id) {
+    try {
+      const company = await this.getCompany(id)
+      if (!company) {
+        throw new Error('Entreprise non trouvée')
+      }
+
+      if (company.status === 'SUSPENDED') {
+        throw new Error('Cette entreprise est déjà suspendue')
+      }
+
+      // Update company status
+      const sql = 'UPDATE companies SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      AdminDatabaseService.run(sql, ['SUSPENDED', id])
+
+      // Update license status
+      const licenseSql = 'UPDATE licenses SET status = ? WHERE company_id = ?'
+      AdminDatabaseService.run(licenseSql, ['SUSPENDED', id])
+
+      // Log audit
+      AdminDatabaseService.logAudit('companies', id, 'SUSPEND', 
+        { status: company.status }, 
+        { status: 'SUSPENDED' }
+      )
+
+      return await this.getCompany(id)
+    } catch (error) {
+      console.error('❌ Error suspending company:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Activate a company
+   * @param {number} id - Company ID
+   * @returns {Object} Updated company
+   */
+  static async activateCompany(id) {
+    try {
+      const company = await this.getCompany(id)
+      if (!company) {
+        throw new Error('Entreprise non trouvée')
+      }
+
+      if (company.status === 'ACTIVE') {
+        throw new Error('Cette entreprise est déjà active')
+      }
+
+      // Update company status
+      const sql = 'UPDATE companies SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      AdminDatabaseService.run(sql, ['ACTIVE', id])
+
+      // Update license status
+      const licenseSql = 'UPDATE licenses SET status = ? WHERE company_id = ?'
+      AdminDatabaseService.run(licenseSql, ['ACTIVE', id])
+
+      // Log audit
+      AdminDatabaseService.logAudit('companies', id, 'ACTIVATE', 
+        { status: company.status }, 
+        { status: 'ACTIVE' }
+      )
+
+      return await this.getCompany(id)
+    } catch (error) {
+      console.error('❌ Error activating company:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get company statistics
    * @returns {Object} Statistics
    */
@@ -356,6 +450,17 @@ export class CompanyService {
     const existingCompanies = AdminDatabaseService.queryAll(
       'SELECT id FROM companies WHERE email = ?',
       [email]
+    )
+    
+    if (existingCompanies && existingCompanies.length > 0) {
+      throw new Error('Cette adresse email est déjà utilisée')
+    }
+  }
+
+  static validateEmailForUpdate(email, excludeId) {
+    const existingCompanies = AdminDatabaseService.queryAll(
+      'SELECT id FROM companies WHERE email = ? AND id != ?',
+      [email, excludeId]
     )
     
     if (existingCompanies && existingCompanies.length > 0) {

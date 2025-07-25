@@ -238,12 +238,18 @@ export class CompanyManagement {
     if (!confirmed) return
 
     try {
-      await CompanyService.updateCompany(companyId, { status: newStatus })
-      this.showSuccess(`Entreprise ${newStatus === 'ACTIVE' ? 'réactivée' : 'suspendue'} avec succès`)
+      if (newStatus === 'SUSPENDED') {
+        await CompanyService.suspendCompany(companyId)
+        this.showSuccess('Entreprise suspendue avec succès')
+      } else {
+        await CompanyService.activateCompany(companyId)
+        this.showSuccess('Entreprise réactivée avec succès')
+      }
+      
       await this.loadCompanies(this.currentFilters)
     } catch (error) {
       console.error('❌ Error toggling company status:', error)
-      this.showError('Erreur lors du changement de statut')
+      this.showError(error.message || 'Erreur lors du changement de statut')
     }
   }
 

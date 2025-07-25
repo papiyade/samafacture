@@ -189,7 +189,16 @@ export class AdminDatabaseService {
 
   static getLastInsertId() {
     if (!this.db) return null
-    return this.db.exec("SELECT last_insert_rowid() as id")[0]?.values[0]?.[0] || null
+    try {
+      const result = this.db.exec("SELECT last_insert_rowid() as id")
+      if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
+        return result[0].values[0][0]
+      }
+      return null
+    } catch (error) {
+      console.error('❌ Error getting last insert ID:', error)
+      return null
+    }
   }
 
   // Audit logging
@@ -249,4 +258,3 @@ export class AdminDatabaseService {
     }
   }
 }
-
