@@ -68,9 +68,10 @@ export class CompanyService {
         WHERE c.id = ?
       `
       
-      const company = AdminDatabaseService.query(sql, [id])
+      const companies = AdminDatabaseService.queryAll(sql, [id])
       
-      if (company && Object.keys(company).length > 0) {
+      if (companies && companies.length > 0) {
+        const company = companies[0]
         return {
           ...company,
           invoiceCount: this.getCompanyInvoiceCount(id),
@@ -305,7 +306,7 @@ export class CompanyService {
       }
 
       // Get company counts
-      const companyCounts = AdminDatabaseService.query(`
+      const companyCountsResult = AdminDatabaseService.queryAll(`
         SELECT 
           COUNT(*) as total,
           SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active,
@@ -313,6 +314,7 @@ export class CompanyService {
         FROM companies
       `)
 
+      const companyCounts = companyCountsResult.length > 0 ? companyCountsResult[0] : {}
       stats.totalCompanies = companyCounts.total || 0
       stats.activeCompanies = companyCounts.active || 0
       stats.suspendedCompanies = companyCounts.suspended || 0
@@ -339,24 +341,24 @@ export class CompanyService {
       throw new Error('Une adresse email valide est requise')
     }
 
-    // Check if email already exists
-    const existingCompany = AdminDatabaseService.query(
+    // Check if email already exists using queryAll
+    const existingCompanies = AdminDatabaseService.queryAll(
       'SELECT id FROM companies WHERE email = ?',
       [data.email]
     )
     
-    if (existingCompany && Object.keys(existingCompany).length > 0) {
+    if (existingCompanies && existingCompanies.length > 0) {
       throw new Error('Cette adresse email est déjà utilisée')
     }
   }
 
   static validateEmail(email) {
-    const existingCompany = AdminDatabaseService.query(
+    const existingCompanies = AdminDatabaseService.queryAll(
       'SELECT id FROM companies WHERE email = ?',
       [email]
     )
     
-    if (existingCompany && Object.keys(existingCompany).length > 0) {
+    if (existingCompanies && existingCompanies.length > 0) {
       throw new Error('Cette adresse email est déjà utilisée')
     }
   }
@@ -445,4 +447,3 @@ export class CompanyService {
     return dates[Math.floor(Math.random() * dates.length)]
   }
 }
-
