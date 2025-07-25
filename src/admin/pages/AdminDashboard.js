@@ -35,26 +35,57 @@ export class AdminDashboard {
     try {
       // Charger les statistiques des entreprises
       const companyStats = await CompanyService.getStatistics()
-      this.stats.companies = companyStats
+      this.stats.companies = {
+        total: companyStats.totalCompanies || 0,
+        active: companyStats.activeCompanies || 0,
+        inactive: companyStats.suspendedCompanies || 0
+      }
 
       // Charger les statistiques des licences
       const licenseStats = await LicenseService.getStatistics()
-      this.stats.licenses = licenseStats
+      this.stats.licenses = {
+        total: licenseStats.totalLicenses || 0,
+        active: licenseStats.activeLicenses || 0,
+        expired: licenseStats.expiredLicenses || 0,
+        expiring: 0 // Sera mis à jour ci-dessous
+      }
 
       // Charger les statistiques d'expiration
-      const expirationStats = await LicenseExpirationManager.getExpirationStats()
-      this.stats.licenses.expiring = expirationStats.expiring30Days
+      try {
+        const expirationStats = await LicenseExpirationManager.getExpirationStats()
+        this.stats.licenses.expiring = expirationStats.expiring30Days || 0
+      } catch (error) {
+        Logger.warn('Could not load expiration stats', { error: error.message })
+        this.stats.licenses.expiring = 0
+      }
 
       // Charger les statistiques d'audit
-      const auditStats = await LicenseAuditService.getAuditStatistics()
-      this.stats.activity = {
-        last24h: auditStats.eventsLast24h,
-        last7days: auditStats.eventsLast7days
+      try {
+        const auditStats = await LicenseAuditService.getAuditStatistics()
+        this.stats.activity = {
+          last24h: auditStats.eventsLast24h || 0,
+          last7days: auditStats.eventsLast7days || 0
+        }
+      } catch (error) {
+        Logger.warn('Could not load audit stats', { error: error.message })
+        this.stats.activity = { last24h: 0, last7days: 0 }
       }
 
       Logger.debug('Dashboard stats loaded', this.stats)
+      
+      // Mettre à jour l'affichage
+      this.updateStatsDisplay()
+      
     } catch (error) {
       Logger.error('Error loading dashboard stats', { error: error.message })
+      // Utiliser des valeurs par défaut en cas d'erreur
+      this.stats = {
+        companies: { total: 0, active: 0, inactive: 0 },
+        licenses: { total: 0, active: 0, expired: 0, expiring: 0 },
+        revenue: { monthly: 0, yearly: 0 },
+        activity: { last24h: 0, last7days: 0 }
+      }
+      this.updateStatsDisplay()
     }
   }
 

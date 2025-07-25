@@ -757,10 +757,455 @@ export class LicenseManagement {
     // Exposer l'instance globalement pour les boutons
     window.licenseManagement = this
     
+    // Charger les données initiales
+    await this.loadData()
+    
     // Charger le tableau des licences après le rendu
     setTimeout(() => {
       this.renderLicensesTable()
     }, 100)
+  }
+
+  async loadData() {
+    try {
+      // Charger les licences
+      this.licenses = await LicenseService.getLicenses()
+      
+      // Charger les entreprises
+      this.companies = await CompanyService.getCompanies()
+      
+      console.log('✅ Données des licences chargées:', {
+        licenses: this.licenses.length,
+        companies: this.companies.length
+      })
+      
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des données:', error)
+      this.licenses = []
+      this.companies = []
+    }
+  }
+
+  showGenerateLicenseModal() {
+    // Créer le modal de génération de licence
+    const modal = document.createElement('div')
+    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50'
+    modal.id = 'generate-license-modal'
+    
+    modal.innerHTML = `
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="mt-3">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white">🔑 Générer une nouvelle licence</h3>
+            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <form id="generate-license-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                🏢 Entreprise
+              </label>
+              <select id="company-select" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">Sélectionner une entreprise...</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                ⭐ Type de licence
+              </label>
+              <select id="license-type-select" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">Sélectionner un type...</option>
+                <option value="TRIAL">🆓 Essai (30 jours)</option>
+                <option value="BASIC">🥉 Basic (100 factures/mois)</option>
+                <option value="PREMIUM">🥈 Premium (500 factures/mois)</option>
+                <option value="ENTERPRISE">🥇 Enterprise (Illimité)</option>
+              </select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  📅 Durée
+                </label>
+                <input type="number" id="license-duration" min="1" max="365" value="30" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  📊 Unité
+                </label>
+                <select id="duration-unit" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  <option value="days">Jours</option>
+                  <option value="months">Mois</option>
+                  <option value="years">Années</option>
+                </select>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                📝 Notes (optionnel)
+              </label>
+              <textarea id="license-notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Notes additionnelles..."></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4">
+              <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">
+                Annuler
+              </button>
+              <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                🔑 Générer la licence
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `
+    
+    document.body.appendChild(modal)
+    
+    // Charger les entreprises
+    this.loadCompaniesForModal()
+    
+    // Gérer la soumission du formulaire
+    document.getElementById('generate-license-form').addEventListener('submit', (e) => {
+      e.preventDefault()
+      this.handleGenerateLicense()
+    })
+  }
+
+  async loadCompaniesForModal() {
+    try {
+      const companies = await CompanyService.getCompanies()
+      const select = document.getElementById('company-select')
+      
+      if (select) {
+        select.innerHTML = '<option value="">Sélectionner une entreprise...</option>'
+        companies.forEach(company => {
+          const option = document.createElement('option')
+          option.value = company.id
+          option.textContent = `${company.name} (${company.email})`
+          select.appendChild(option)
+        })
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des entreprises:', error)
+    }
+  }
+
+  async handleGenerateLicense() {
+    try {
+      const companyId = document.getElementById('company-select').value
+      const licenseType = document.getElementById('license-type-select').value
+      const duration = parseInt(document.getElementById('license-duration').value)
+      const unit = document.getElementById('duration-unit').value
+      const notes = document.getElementById('license-notes').value
+      
+      if (!companyId || !licenseType) {
+        alert('Veuillez remplir tous les champs obligatoires')
+        return
+      }
+      
+      // Calculer la date d'expiration
+      const now = new Date()
+      let expiresAt = new Date(now)
+      
+      switch (unit) {
+        case 'days':
+          expiresAt.setDate(now.getDate() + duration)
+          break
+        case 'months':
+          expiresAt.setMonth(now.getMonth() + duration)
+          break
+        case 'years':
+          expiresAt.setFullYear(now.getFullYear() + duration)
+          break
+      }
+      
+      // Générer la licence
+      const licenseData = {
+        companyId: parseInt(companyId),
+        licenseType,
+        expiresAt: expiresAt.toISOString(),
+        notes: notes || null,
+        status: 'ACTIVE'
+      }
+      
+      const newLicense = await LicenseService.createLicense(licenseData)
+      
+      // Fermer le modal
+      document.getElementById('generate-license-modal').remove()
+      
+      // Recharger les données
+      await this.loadData()
+      this.renderLicensesTable()
+      
+      // Afficher un message de succès
+      this.showSuccessMessage(`Licence ${newLicense.licenseKey} générée avec succès !`)
+      
+    } catch (error) {
+      console.error('Erreur lors de la génération de la licence:', error)
+      alert('Erreur lors de la génération de la licence: ' + error.message)
+    }
+  }
+
+  showSuccessMessage(message) {
+    const notification = document.createElement('div')
+    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg z-50'
+    notification.textContent = message
+    
+    document.body.appendChild(notification)
+    
+    setTimeout(() => {
+      notification.remove()
+    }, 3000)
+  }
+
+  async renderLicensesTable() {
+    const tableBody = document.getElementById('licenses-table-body')
+    if (!tableBody) return
+
+    try {
+      // Charger les licences
+      const licenses = await LicenseService.getLicenses()
+      
+      if (licenses.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center">
+              <div class="text-gray-500 dark:text-gray-400">
+                <div class="text-6xl mb-4">🔑</div>
+                <p class="text-lg font-medium">Aucune licence trouvée</p>
+                <p class="text-sm">Commencez par générer votre première licence</p>
+                <button onclick="window.licenseManagement.showGenerateLicenseModal()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                  🔑 Générer une licence
+                </button>
+              </div>
+            </td>
+          </tr>
+        `
+        return
+      }
+
+      // Générer les lignes du tableau
+      tableBody.innerHTML = licenses.map(license => `
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <input type="checkbox" class="license-checkbox" data-license-id="${license.id}">
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 w-8 h-8">
+                <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                  <span class="text-xs font-medium text-blue-600 dark:text-blue-400">
+                    ${license.companyName ? license.companyName.charAt(0).toUpperCase() : '?'}
+                  </span>
+                </div>
+              </div>
+              <div class="ml-3">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  ${license.companyName || 'Entreprise inconnue'}
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  ${license.companyEmail || ''}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+              ${license.licenseKey}
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${this.getLicenseTypeBadge(license.licenseType)}">
+              ${this.getLicenseTypeIcon(license.licenseType)} ${license.licenseType}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${this.getLicenseStatusBadge(license.status)}">
+              ${this.getLicenseStatusIcon(license.status)} ${this.getLicenseStatusText(license.status)}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            ${license.createdAt ? new Date(license.createdAt).toLocaleDateString('fr-FR') : 'N/A'}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+            <div class="flex flex-col">
+              <span class="${this.getExpirationClass(license.expiresAt)}">
+                ${license.expiresAt ? new Date(license.expiresAt).toLocaleDateString('fr-FR') : 'Jamais'}
+              </span>
+              ${this.getExpirationWarning(license.expiresAt)}
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <div class="flex items-center space-x-2">
+              <button onclick="window.licenseManagement.extendLicense('${license.id}')" 
+                      class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" 
+                      title="Prolonger">
+                ⏰
+              </button>
+              <button onclick="window.licenseManagement.revokeLicense('${license.id}')" 
+                      class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" 
+                      title="Révoquer">
+                ❌
+              </button>
+              <button onclick="window.licenseManagement.viewLicenseDetails('${license.id}')" 
+                      class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300" 
+                      title="Voir détails">
+                👁️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('')
+
+      // Mettre à jour les statistiques
+      this.updateLicenseStats(licenses)
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des licences:', error)
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="8" class="px-6 py-12 text-center text-red-500">
+            ❌ Erreur lors du chargement des licences
+          </td>
+        </tr>
+      `
+    }
+  }
+
+  getLicenseTypeBadge(type) {
+    const badges = {
+      'TRIAL': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+      'BASIC': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+      'PREMIUM': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+      'ENTERPRISE': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+    }
+    return badges[type] || 'bg-gray-100 text-gray-800'
+  }
+
+  getLicenseTypeIcon(type) {
+    const icons = {
+      'TRIAL': '🆓',
+      'BASIC': '🥉',
+      'PREMIUM': '🥈',
+      'ENTERPRISE': '🥇'
+    }
+    return icons[type] || '📄'
+  }
+
+  getLicenseStatusBadge(status) {
+    const badges = {
+      'ACTIVE': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+      'EXPIRED': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      'SUSPENDED': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+      'REVOKED': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    }
+    return badges[status] || 'bg-gray-100 text-gray-800'
+  }
+
+  getLicenseStatusIcon(status) {
+    const icons = {
+      'ACTIVE': '✅',
+      'EXPIRED': '❌',
+      'SUSPENDED': '⏸️',
+      'REVOKED': '🚫'
+    }
+    return icons[status] || '❓'
+  }
+
+  getLicenseStatusText(status) {
+    const texts = {
+      'ACTIVE': 'Actif',
+      'EXPIRED': 'Expiré',
+      'SUSPENDED': 'Suspendu',
+      'REVOKED': 'Révoqué'
+    }
+    return texts[status] || status
+  }
+
+  getExpirationClass(expiresAt) {
+    if (!expiresAt) return ''
+    
+    const now = new Date()
+    const expiration = new Date(expiresAt)
+    const daysUntilExpiration = Math.ceil((expiration - now) / (1000 * 60 * 60 * 24))
+    
+    if (daysUntilExpiration < 0) return 'text-red-600 font-semibold'
+    if (daysUntilExpiration <= 7) return 'text-orange-600 font-semibold'
+    if (daysUntilExpiration <= 30) return 'text-yellow-600'
+    return ''
+  }
+
+  getExpirationWarning(expiresAt) {
+    if (!expiresAt) return ''
+    
+    const now = new Date()
+    const expiration = new Date(expiresAt)
+    const daysUntilExpiration = Math.ceil((expiration - now) / (1000 * 60 * 60 * 24))
+    
+    if (daysUntilExpiration < 0) return '<span class="text-xs text-red-500">Expirée</span>'
+    if (daysUntilExpiration <= 7) return '<span class="text-xs text-orange-500">Expire bientôt</span>'
+    if (daysUntilExpiration <= 30) return '<span class="text-xs text-yellow-500">Expire dans ' + daysUntilExpiration + ' jours</span>'
+    return ''
+  }
+
+  updateLicenseStats(licenses) {
+    const stats = {
+      total: licenses.length,
+      active: licenses.filter(l => l.status === 'ACTIVE').length,
+      expired: licenses.filter(l => l.status === 'EXPIRED').length,
+      expiring: 0
+    }
+
+    // Calculer les licences qui expirent bientôt
+    const now = new Date()
+    stats.expiring = licenses.filter(license => {
+      if (!license.expiresAt || license.status !== 'ACTIVE') return false
+      const expiration = new Date(license.expiresAt)
+      const daysUntilExpiration = Math.ceil((expiration - now) / (1000 * 60 * 60 * 24))
+      return daysUntilExpiration > 0 && daysUntilExpiration <= 30
+    }).length
+
+    // Mettre à jour l'affichage
+    const totalElement = document.getElementById('total-licenses-count')
+    const activeElement = document.getElementById('active-licenses-count')
+    const expiredElement = document.getElementById('expired-licenses-count')
+    const expiringElement = document.getElementById('expiring-licenses-count')
+
+    if (totalElement) totalElement.textContent = stats.total
+    if (activeElement) activeElement.textContent = stats.active
+    if (expiredElement) expiredElement.textContent = stats.expired
+    if (expiringElement) expiringElement.textContent = stats.expiring
+  }
+
+  // Méthodes d'action sur les licences
+  async extendLicense(licenseId) {
+    // TODO: Implémenter l'extension de licence
+    alert('Fonctionnalité d\'extension de licence à implémenter')
+  }
+
+  async revokeLicense(licenseId) {
+    if (confirm('Êtes-vous sûr de vouloir révoquer cette licence ?')) {
+      try {
+        await LicenseService.revokeLicense(licenseId)
+        this.showSuccessMessage('Licence révoquée avec succès')
+        this.renderLicensesTable()
+      } catch (error) {
+        console.error('Erreur lors de la révocation:', error)
+        alert('Erreur lors de la révocation de la licence')
+      }
+    }
+  }
+
+  async viewLicenseDetails(licenseId) {
+    // TODO: Implémenter l'affichage des détails
+    alert('Fonctionnalité de détails de licence à implémenter')
   }
 
   destroy() {
