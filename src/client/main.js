@@ -185,11 +185,19 @@ class SamaFactureApp {
           </div>
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Erreur d'initialisation</h2>
           <p class="text-gray-600 dark:text-gray-400 mb-4">${error.message}</p>
-          <button onclick="location.reload()" class="btn btn-primary">
+          <button id="reload-app-btn" class="btn btn-primary">
             Recharger l'application
           </button>
         </div>
       `
+      
+      // Add event listener for reload button
+      const reloadBtn = loadingScreen.querySelector('#reload-app-btn')
+      if (reloadBtn) {
+        reloadBtn.addEventListener('click', () => {
+          location.reload()
+        })
+      }
     }
   }
 
@@ -406,7 +414,7 @@ window.showNotification = (message, type = 'info') => {
   notification.innerHTML = `
     <div class="flex items-center justify-between">
       <span>${message}</span>
-      <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+      <button class="ml-4 text-white hover:text-gray-200 notification-close-btn">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
@@ -415,6 +423,14 @@ window.showNotification = (message, type = 'info') => {
   `
   
   container.appendChild(notification)
+  
+  // Add event listener for close button
+  const closeBtn = notification.querySelector('.notification-close-btn')
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      notification.remove()
+    })
+  }
   
   // Animate in
   setTimeout(() => {
@@ -472,7 +488,7 @@ window.showClientDetails = (client) => {
     <div class="relative bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
       <div class="flex items-center justify-between p-6 border-b">
         <h3 class="text-lg font-medium text-gray-900">Détails du client</h3>
-        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+        <button class="text-gray-400 hover:text-gray-600 modal-close-btn">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -519,6 +535,14 @@ window.showClientDetails = (client) => {
   `
   
   document.body.appendChild(modal)
+  
+  // Add event listener for close button
+  const closeBtn = modal.querySelector('.modal-close-btn')
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.remove()
+    })
+  }
 }
 
 // Old functions removed - replaced by enhanced versions with PDF buttons below
