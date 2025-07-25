@@ -14,6 +14,11 @@ export class CompanyService {
    */
   static async getCompanies(filters = {}) {
     try {
+      // Ensure database is initialized
+      if (!AdminDatabaseService.isInitialized) {
+        await AdminDatabaseService.init()
+      }
+
       let sql = `
         SELECT c.*, l.license_type, l.status as license_status, l.expires_at
         FROM companies c

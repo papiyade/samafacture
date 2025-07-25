@@ -131,6 +131,11 @@ export class Router {
         if (typeof this.currentPage.init === 'function') {
           await this.currentPage.init()
         }
+        
+        // Call afterRender if it exists (critical for event listeners)
+        if (typeof this.currentPage.afterRender === 'function') {
+          await this.currentPage.afterRender()
+        }
       }
 
       // Hide loading state

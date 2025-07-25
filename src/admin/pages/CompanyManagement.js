@@ -24,12 +24,17 @@ export class CompanyManagement {
       }
       
       await this.loadCompanies()
-      this.setupEventListeners()
       console.log('✅ Company Management initialized')
     } catch (error) {
       console.error('❌ Error initializing Company Management:', error)
       this.showError('Erreur lors de l\'initialisation de la gestion des entreprises')
     }
+  }
+
+  async afterRender() {
+    // Setup event listeners after DOM is ready
+    this.setupEventListeners()
+    console.log('✅ Company Management event listeners attached')
   }
 
   async loadCompanies(filters = {}) {
