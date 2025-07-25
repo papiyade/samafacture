@@ -295,6 +295,78 @@ export class DatabaseService {
     return `${prefix}-${nextNumber.padStart(4, '0')}`
   }
 
+  // Expenses methods
+  static getExpenses() {
+    return this.getItem('expenses') || []
+  }
+
+  static addExpense(expense) {
+    const expenses = this.getExpenses()
+    const newExpense = {
+      id: Date.now(),
+      ...expense,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    expenses.push(newExpense)
+    this.setItem('expenses', expenses)
+    return newExpense
+  }
+
+  static updateExpense(id, updates) {
+    const expenses = this.getExpenses()
+    const index = expenses.findIndex(e => e.id === id)
+    if (index !== -1) {
+      expenses[index] = {
+        ...expenses[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('expenses', expenses)
+      return expenses[index]
+    }
+    return null
+  }
+
+  static deleteExpense(id) {
+    const expenses = this.getExpenses()
+    const filtered = expenses.filter(e => e.id !== id)
+    this.setItem('expenses', filtered)
+    return true
+  }
+
+  static getExpense(id) {
+    const expenses = this.getExpenses()
+    return expenses.find(e => e.id === id) || null
+  }
+
+  // Expense categories
+  static getExpenseCategories() {
+    const defaultCategories = [
+      'Bureau et fournitures',
+      'Transport et déplacements',
+      'Marketing et publicité',
+      'Équipement et matériel',
+      'Télécommunications',
+      'Services professionnels',
+      'Formation',
+      'Assurances',
+      'Taxes et impôts',
+      'Maintenance et réparations',
+      'Autres'
+    ]
+    return this.getSetting('expense_categories') || defaultCategories
+  }
+
+  static addExpenseCategory(category) {
+    const categories = this.getExpenseCategories()
+    if (!categories.includes(category)) {
+      categories.push(category)
+      this.setSetting('expense_categories', categories)
+    }
+    return categories
+  }
+
   // Statistics methods
   static getStats() {
     const invoices = this.getInvoices()
