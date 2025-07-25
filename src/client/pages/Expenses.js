@@ -22,6 +22,8 @@ export class ExpensesPage {
     try {
       this.expenses = DatabaseService.getExpenses()
       this.categories = DatabaseService.getExpenseCategories()
+      console.log('Loaded expenses:', this.expenses)
+      console.log('Loaded categories:', this.categories)
     } catch (error) {
       console.error('Error loading expenses data:', error)
       this.expenses = []
@@ -34,7 +36,25 @@ export class ExpensesPage {
     
     this.container = document.createElement('div')
     this.container.className = 'p-6'
-    this.container.innerHTML = `
+    this.container.innerHTML = this.getMainHTML()
+
+    // Attach event listeners after DOM is created
+    setTimeout(() => {
+      this.attachEventListeners()
+      this.updateSummaryCards()
+      this.populateCategoryFilter()
+      this.renderExpensesTable()
+      this.createModal()
+    }, 100)
+
+    // Make this instance globally accessible for onclick handlers
+    window.expensesPage = this
+
+    return this.container
+  }
+
+  getMainHTML() {
+    return `
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Gestion des Dépenses</h1>
         <p class="text-gray-600 dark:text-gray-400">Suivez et gérez toutes vos dépenses d'entreprise</p>
@@ -133,7 +153,7 @@ export class ExpensesPage {
       </div>
 
       <!-- Expenses Table -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden" id="expenses-table-container">
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Liste des Dépenses</h3>
         </div>
@@ -178,20 +198,11 @@ export class ExpensesPage {
         </div>
       </div>
     `
-
-    this.attachEventListeners()
-    this.updateSummaryCards()
-    this.populateCategoryFilter()
-    this.renderExpensesTable()
-    this.createModal()
-
-    // Make this instance globally accessible for onclick handlers
-    window.expensesPage = this
-
-    return this.container
   }
 
   attachEventListeners() {
+    console.log('Attaching event listeners...')
+    
     // Search functionality
     const searchInput = document.getElementById('search-expenses')
     if (searchInput) {
@@ -199,6 +210,7 @@ export class ExpensesPage {
         this.searchTerm = e.target.value.toLowerCase()
         this.applyFilters()
       })
+      console.log('Search input listener attached')
     }
 
     // Category filter
@@ -208,6 +220,7 @@ export class ExpensesPage {
         this.currentFilter = e.target.value
         this.applyFilters()
       })
+      console.log('Category filter listener attached')
     }
 
     // Date filter
@@ -217,6 +230,7 @@ export class ExpensesPage {
         this.dateFilter = e.target.value
         this.applyFilters()
       })
+      console.log('Date filter listener attached')
     }
 
     // Add expense buttons
@@ -224,10 +238,21 @@ export class ExpensesPage {
     const addFirstExpenseBtn = document.getElementById('add-first-expense-btn')
     
     if (addExpenseBtn) {
-      addExpenseBtn.addEventListener('click', () => this.showAddExpenseModal())
+      addExpenseBtn.addEventListener('click', (e) => {
+        e.preventDefault()
+        console.log('Add expense button clicked')
+        this.showAddExpenseModal()
+      })
+      console.log('Add expense button listener attached')
     }
+    
     if (addFirstExpenseBtn) {
-      addFirstExpenseBtn.addEventListener('click', () => this.showAddExpenseModal())
+      addFirstExpenseBtn.addEventListener('click', (e) => {
+        e.preventDefault()
+        console.log('Add first expense button clicked')
+        this.showAddExpenseModal()
+      })
+      console.log('Add first expense button listener attached')
     }
   }
 
@@ -243,6 +268,7 @@ export class ExpensesPage {
         option.textContent = category
         categoryFilter.appendChild(option)
       })
+      console.log('Category filter populated with', this.categories.length, 'categories')
     }
   }
 
@@ -309,7 +335,7 @@ export class ExpensesPage {
   renderExpensesTable() {
     const tableBody = document.getElementById('expenses-table-body')
     const emptyState = document.getElementById('empty-state')
-    const tableContainer = tableBody?.closest('.bg-white')
+    const tableContainer = document.getElementById('expenses-table-container')
     
     if (!tableBody) return
 
@@ -370,6 +396,14 @@ export class ExpensesPage {
   }
 
   createModal() {
+    console.log('Creating modal...')
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('expense-modal')
+    if (existingModal) {
+      existingModal.remove()
+    }
+
     // Create modal HTML
     const modalHTML = `
       <div id="expense-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
@@ -529,6 +563,7 @@ export class ExpensesPage {
 
     // Set up modal event listeners
     this.setupModalEventListeners()
+    console.log('Modal created and event listeners attached')
   }
 
   setupModalEventListeners() {
@@ -538,21 +573,38 @@ export class ExpensesPage {
     const form = document.getElementById('expense-form')
 
     // Close modal events
-    closeBtn?.addEventListener('click', () => this.hideModal())
-    cancelBtn?.addEventListener('click', () => this.hideModal())
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        console.log('Close button clicked')
+        this.hideModal()
+      })
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        console.log('Cancel button clicked')
+        this.hideModal()
+      })
+    }
     
     // Close modal when clicking outside
-    modal?.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        this.hideModal()
-      }
-    })
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          console.log('Modal backdrop clicked')
+          this.hideModal()
+        }
+      })
+    }
 
     // Form submission
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault()
-      this.handleFormSubmit()
-    })
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault()
+        console.log('Form submitted')
+        this.handleFormSubmit()
+      })
+    }
 
     // Set today's date as default
     const dateInput = document.getElementById('expense-date')
@@ -575,10 +627,12 @@ export class ExpensesPage {
         option.textContent = category
         categorySelect.appendChild(option)
       })
+      console.log('Modal categories populated')
     }
   }
 
   showAddExpenseModal() {
+    console.log('showAddExpenseModal called')
     this.editingExpense = null
     const modal = document.getElementById('expense-modal')
     const title = document.getElementById('modal-title')
@@ -598,25 +652,31 @@ export class ExpensesPage {
     if (modal) {
       modal.classList.remove('hidden')
       this.isModalOpen = true
+      console.log('Modal should be visible now')
       
       // Focus on first input
       const firstInput = document.getElementById('expense-description')
       if (firstInput) {
         setTimeout(() => firstInput.focus(), 100)
       }
+    } else {
+      console.error('Modal not found!')
     }
   }
 
   hideModal() {
+    console.log('hideModal called')
     const modal = document.getElementById('expense-modal')
     if (modal) {
       modal.classList.add('hidden')
       this.isModalOpen = false
       this.editingExpense = null
+      console.log('Modal hidden')
     }
   }
 
   async handleFormSubmit() {
+    console.log('handleFormSubmit called')
     const form = document.getElementById('expense-form')
     if (!form) return
 
@@ -630,6 +690,8 @@ export class ExpensesPage {
       payment_method: formData.get('payment_method') || '',
       notes: formData.get('notes') || ''
     }
+
+    console.log('Form data:', expenseData)
 
     // Validation
     if (!expenseData.description || !expenseData.amount || !expenseData.date || !expenseData.category) {
@@ -647,10 +709,12 @@ export class ExpensesPage {
         // Update existing expense
         DatabaseService.updateExpense(this.editingExpense.id, expenseData)
         this.showNotification('Dépense modifiée avec succès!', 'success')
+        console.log('Expense updated')
       } else {
         // Add new expense
-        DatabaseService.addExpense(expenseData)
+        const newExpense = DatabaseService.addExpense(expenseData)
         this.showNotification('Dépense ajoutée avec succès!', 'success')
+        console.log('New expense added:', newExpense)
       }
 
       // Refresh data and UI
@@ -665,6 +729,7 @@ export class ExpensesPage {
   }
 
   editExpense(id) {
+    console.log('editExpense called with id:', id)
     const expense = DatabaseService.getExpense(id)
     if (!expense) {
       this.showNotification('Dépense introuvable.', 'error')
@@ -697,10 +762,12 @@ export class ExpensesPage {
   }
 
   deleteExpense(id) {
+    console.log('deleteExpense called with id:', id)
     if (confirm('Êtes-vous sûr de vouloir supprimer cette dépense ? Cette action est irréversible.')) {
       try {
         DatabaseService.deleteExpense(id)
         this.showNotification('Dépense supprimée avec succès!', 'success')
+        console.log('Expense deleted')
         
         // Refresh data and UI
         this.loadData().then(() => {
@@ -714,6 +781,8 @@ export class ExpensesPage {
   }
 
   showNotification(message, type = 'info') {
+    console.log('Showing notification:', message, type)
+    
     // Create notification element
     const notification = document.createElement('div')
     notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full ${
@@ -734,7 +803,9 @@ export class ExpensesPage {
     setTimeout(() => {
       notification.classList.add('translate-x-full')
       setTimeout(() => {
-        document.body.removeChild(notification)
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification)
+        }
       }, 300)
     }, 3000)
   }
