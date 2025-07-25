@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SamaFacture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Test SamaFacture</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test PDF Generation</h2>
+            <button id="test-pdf" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Tester génération PDF
+            </button>
+            <div id="pdf-result" class="mt-4 text-sm"></div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Test Product Actions</h2>
+            <button id="test-product" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Tester actions produits
+            </button>
+            <div id="product-result" class="mt-4 text-sm"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Test PDF Generation
+        document.getElementById('test-pdf').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('pdf-result')
+            resultDiv.innerHTML = 'Test en cours...'
+            
+            try {
+                // Test loading jsPDF
+                const script = document.createElement('script')
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+                
+                script.onload = () => {
+                    if (window.jsPDF) {
+                        const doc = new window.jsPDF()
+                        doc.text('Test PDF', 20, 20)
+                        doc.save('test.pdf')
+                        resultDiv.innerHTML = '<span class="text-green-600">✅ PDF généré avec succès!</span>'
+                    } else {
+                        resultDiv.innerHTML = '<span class="text-red-600">❌ jsPDF non disponible</span>'
+                    }
+                }
+                
+                script.onerror = () => {
+                    resultDiv.innerHTML = '<span class="text-red-600">❌ Erreur de chargement jsPDF</span>'
+                }
+                
+                document.head.appendChild(script)
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="text-red-600">❌ Erreur: ${error.message}</span>`
+            }
+        })
+        
+        // Test Product Actions
+        document.getElementById('test-product').addEventListener('click', () => {
+            const resultDiv = document.getElementById('product-result')
+            
+            // Simulate product data
+            const testProduct = {
+                id: 1,
+                name: 'Produit Test',
+                price: 1000,
+                category: 'Test',
+                stock: 10,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+            
+            // Test if we can create a modal-like structure
+            try {
+                const modalContent = `
+                    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                            <h3 class="text-lg font-semibold mb-4">Produit: ${testProduct.name}</h3>
+                            <p>Prix: ${testProduct.price} XOF</p>
+                            <p>Stock: ${testProduct.stock}</p>
+                            <button onclick="this.parentElement.parentElement.remove()" 
+                                    class="mt-4 bg-gray-600 text-white px-4 py-2 rounded">
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                `
+                
+                const modalDiv = document.createElement('div')
+                modalDiv.innerHTML = modalContent
+                document.body.appendChild(modalDiv)
+                
+                resultDiv.innerHTML = '<span class="text-green-600">✅ Modal produit créé avec succès!</span>'
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="text-red-600">❌ Erreur: ${error.message}</span>`
+            }
+        })
+    </script>
+</body>
+</html>
+

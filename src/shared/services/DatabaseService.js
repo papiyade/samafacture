@@ -52,6 +52,9 @@ export class DatabaseService {
     if (!this.getItem('quotes')) {
       this.setItem('quotes', [])
     }
+    if (!this.getItem('expenses')) {
+      this.setItem('expenses', [])
+    }
   }
 
   static getItem(key) {
@@ -262,10 +265,109 @@ export class DatabaseService {
     return newQuote
   }
 
+  static updateQuote(id, updates) {
+    const quotes = this.getQuotes()
+    const index = quotes.findIndex(q => q.id === id)
+    if (index !== -1) {
+      quotes[index] = {
+        ...quotes[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('quotes', quotes)
+      return quotes[index]
+    }
+    return null
+  }
+
+  static deleteQuote(id) {
+    const quotes = this.getQuotes()
+    const filtered = quotes.filter(q => q.id !== id)
+    this.setItem('quotes', filtered)
+    return true
+  }
+
+  static getQuote(id) {
+    const quotes = this.getQuotes()
+    return quotes.find(q => q.id === id) || null
+  }
+
   static generateQuoteNumber() {
     const prefix = this.getSetting('quote_prefix') || 'DEV'
     const nextNumber = this.getSetting('next_quote_number') || '1'
     return `${prefix}-${nextNumber.padStart(4, '0')}`
+  }
+
+  // Expenses methods
+  static getExpenses() {
+    return this.getItem('expenses') || []
+  }
+
+  static addExpense(expense) {
+    const expenses = this.getExpenses()
+    const newExpense = {
+      id: Date.now(),
+      ...expense,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    expenses.push(newExpense)
+    this.setItem('expenses', expenses)
+    return newExpense
+  }
+
+  static updateExpense(id, updates) {
+    const expenses = this.getExpenses()
+    const index = expenses.findIndex(e => e.id === id)
+    if (index !== -1) {
+      expenses[index] = {
+        ...expenses[index],
+        ...updates,
+        updated_at: new Date().toISOString()
+      }
+      this.setItem('expenses', expenses)
+      return expenses[index]
+    }
+    return null
+  }
+
+  static deleteExpense(id) {
+    const expenses = this.getExpenses()
+    const filtered = expenses.filter(e => e.id !== id)
+    this.setItem('expenses', filtered)
+    return true
+  }
+
+  static getExpense(id) {
+    const expenses = this.getExpenses()
+    return expenses.find(e => e.id === id) || null
+  }
+
+  // Expense categories
+  static getExpenseCategories() {
+    const defaultCategories = [
+      'Bureau et fournitures',
+      'Transport et déplacements',
+      'Marketing et publicité',
+      'Équipement et matériel',
+      'Télécommunications',
+      'Services professionnels',
+      'Formation',
+      'Assurances',
+      'Taxes et impôts',
+      'Maintenance et réparations',
+      'Autres'
+    ]
+    return this.getSetting('expense_categories') || defaultCategories
+  }
+
+  static addExpenseCategory(category) {
+    const categories = this.getExpenseCategories()
+    if (!categories.includes(category)) {
+      categories.push(category)
+      this.setSetting('expense_categories', categories)
+    }
+    return categories
   }
 
   // Statistics methods
@@ -343,4 +445,3 @@ export class DatabaseService {
     return this.createDefaultData()
   }
 }
-

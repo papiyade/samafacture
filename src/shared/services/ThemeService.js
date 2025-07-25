@@ -72,5 +72,8 @@ export class ThemeService {
   static isDark() {
     return document.documentElement.classList.contains('dark')
   }
-}
 
+  static getCurrentTheme() {
+    return this.getTheme()
+  }
+}

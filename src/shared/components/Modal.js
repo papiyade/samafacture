@@ -30,15 +30,15 @@ export class Modal {
     this.element.innerHTML = `
       <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <!-- Background overlay -->
-        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75" aria-hidden="true"></div>
         
         <!-- Modal panel -->
-        <div class="inline-block w-full ${sizes[this.options.size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+        <div class="inline-block w-full ${sizes[this.options.size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg">
           ${this.options.title ? `
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-medium text-gray-900">${this.options.title}</h3>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">${this.options.title}</h3>
               ${this.options.closable ? `
-                <button type="button" class="modal-close text-gray-400 hover:text-gray-600 focus:outline-none">
+                <button type="button" class="modal-close text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 focus:outline-none">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
@@ -121,5 +121,54 @@ export class Modal {
       document.body.style.overflow = ''
     }
   }
-}
 
+  // Static method for quick modal creation with actions
+  static create(options = {}) {
+    const modal = new Modal(options)
+    
+    // Add actions support
+    if (options.actions && options.actions.length > 0) {
+      const actionsHtml = options.actions.map(action => {
+        const variantClasses = {
+          primary: 'bg-primary-600 hover:bg-primary-700 text-white',
+          secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-900 dark:bg-gray-600 dark:hover:bg-gray-500 dark:text-white',
+          danger: 'bg-red-600 hover:bg-red-700 text-white'
+        }
+        
+        const classes = variantClasses[action.variant] || variantClasses.primary
+        
+        return `
+          <button type="button" class="modal-action-btn px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${classes}" data-action="${action.label}">
+            ${action.label}
+          </button>
+        `
+      }).join('')
+      
+      const actionsContainer = `
+        <div class="mt-6 flex justify-end space-x-3">
+          ${actionsHtml}
+        </div>
+      `
+      
+      modal.options.content += actionsContainer
+    }
+    
+    modal.create()
+    
+    // Add action event listeners
+    if (options.actions) {
+      options.actions.forEach(action => {
+        const btn = modal.element.querySelector(`[data-action="${action.label}"]`)
+        if (btn && action.onClick) {
+          btn.addEventListener('click', action.onClick)
+        }
+      })
+    }
+    
+    return {
+      show: () => modal.open(),
+      close: () => modal.close(),
+      destroy: () => modal.destroy()
+    }
+  }
+}

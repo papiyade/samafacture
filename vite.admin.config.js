@@ -19,8 +19,10 @@ export default defineConfig({
   },
   server: {
     port: 3001,
-    host: true
+    host: true,
+    open: '/src/admin/index.html'
   },
+  root: '.',
   resolve: {
     alias: {
       '@': '/src',
@@ -30,4 +32,3 @@ export default defineConfig({
     }
   }
 })
-
