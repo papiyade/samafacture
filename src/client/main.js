@@ -100,8 +100,8 @@ class SamaFactureApp {
           pageInstance = new ProductList()
           break
         case 'expenses':
-          const { Expenses } = await import('./pages/Expenses.js')
-          pageInstance = new Expenses()
+          const { ExpensesPage } = await import('./pages/Expenses.js')
+          pageInstance = new ExpensesPage()
           break
         case 'settings':
           const { Settings } = await import('./pages/Settings.js')
