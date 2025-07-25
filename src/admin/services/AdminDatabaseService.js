@@ -1,3 +1,5 @@
+import { Logger } from '../utils/Logger.js'
+
 /**
  * Admin Database Service - Manages SQLite database for admin operations
  * Uses sql.js for web compatibility
@@ -8,29 +10,36 @@ export class AdminDatabaseService {
 
   static async init() {
     try {
+      Logger.info('Initializing admin database')
+      
       // Import sql.js
       const initSqlJs = (await import('sql.js')).default
       const SQL = await initSqlJs({
         locateFile: file => `https://sql.js.org/dist/${file}`
       })
+      Logger.debug('sql.js loaded successfully')
 
       // Create or load database
       const savedDb = localStorage.getItem('samafacture_admin_db')
       if (savedDb) {
+        Logger.debug('Loading existing database from localStorage')
         // Load existing database
         const uInt8Array = new Uint8Array(JSON.parse(savedDb))
         this.db = new SQL.Database(uInt8Array)
+        // Always ensure tables exist (in case schema changed)
+        await this.createTables()
       } else {
+        Logger.debug('Creating new database')
         // Create new database
         this.db = new SQL.Database()
         await this.createTables()
       }
 
       this.isInitialized = true
-      console.log('✅ Admin Database initialized successfully')
+      Logger.success('Admin Database initialized successfully')
       return true
     } catch (error) {
-      console.error('❌ Failed to initialize admin database:', error)
+      Logger.error('Failed to initialize admin database', { error: error.message, stack: error.stack })
       throw error
     }
   }
@@ -111,14 +120,15 @@ export class AdminDatabaseService {
     `
 
     try {
+      Logger.debug('Creating database tables')
       this.db.run(createCompaniesTable)
       this.db.run(createLicensesTable)
       this.db.run(createAuditTable)
       
-      console.log('✅ Database tables created successfully')
+      Logger.success('Database tables created successfully')
       this.saveDatabase()
     } catch (error) {
-      console.error('❌ Error creating tables:', error)
+      Logger.error('Error creating tables', { error: error.message, stack: error.stack })
       throw error
     }
   }
@@ -176,13 +186,16 @@ export class AdminDatabaseService {
     }
 
     try {
+      Logger.debug('Executing SQL run', { sql: sql.substring(0, 100) + '...', paramsCount: params.length })
       const stmt = this.db.prepare(sql)
       stmt.run(params)
       stmt.free()
       this.saveDatabase()
-      return this.db.getRowsModified()
+      const rowsModified = this.db.getRowsModified()
+      Logger.debug('SQL run completed successfully', { rowsModified })
+      return rowsModified
     } catch (error) {
-      console.error('❌ Database run error:', error)
+      Logger.error('Database run error', { sql, params, error: error.message })
       throw error
     }
   }
@@ -192,11 +205,14 @@ export class AdminDatabaseService {
     try {
       const result = this.db.exec("SELECT last_insert_rowid() as id")
       if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
-        return result[0].values[0][0]
+        const id = result[0].values[0][0]
+        Logger.debug('Last insert ID retrieved', { id })
+        return id
       }
+      Logger.warn('No last insert ID found')
       return null
     } catch (error) {
-      console.error('❌ Error getting last insert ID:', error)
+      Logger.error('Error getting last insert ID', { error: error.message })
       return null
     }
   }

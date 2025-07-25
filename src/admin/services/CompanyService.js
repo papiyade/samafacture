@@ -1,5 +1,6 @@
 import { AdminDatabaseService } from './AdminDatabaseService.js'
 import { CredentialGenerator } from '../utils/CredentialGenerator.js'
+import { Logger } from '../utils/Logger.js'
 
 /**
  * Company Service - Manages company CRUD operations
@@ -94,21 +95,15 @@ export class CompanyService {
    */
   static async createCompany(companyData) {
     try {
-      // Validate required fields
-      this.validateCompanyData(companyData)
-
-      // Double-check email uniqueness just before insertion
-      const emailCheck = AdminDatabaseService.queryAll(
-        'SELECT id FROM companies WHERE email = ?',
-        [companyData.email]
-      )
+      Logger.info('Starting company creation', companyData)
       
-      if (emailCheck && emailCheck.length > 0) {
-        throw new Error('Cette adresse email est déjà utilisée')
-      }
+      // Validate required fields (includes email uniqueness check)
+      this.validateCompanyData(companyData)
+      Logger.debug('Company data validation passed')
 
       // Get existing usernames to avoid duplicates
       const existingUsernames = this.getExistingUsernames()
+      Logger.debug('Existing usernames retrieved', { count: existingUsernames.length })
 
       // Generate credentials
       const credentials = await CredentialGenerator.generateCredentials(
@@ -116,6 +111,7 @@ export class CompanyService {
         existingUsernames,
         companyData.memorablePassword || false
       )
+      Logger.debug('Credentials generated', { username: credentials.username })
 
       // Prepare company data
       const company = {
@@ -147,6 +143,7 @@ export class CompanyService {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
 
+      Logger.debug('Inserting company into database', { sql, params: company.name })
       AdminDatabaseService.run(sql, [
         company.name, company.email, company.phone, company.address,
         company.city, company.postal_code, company.country,
@@ -157,12 +154,14 @@ export class CompanyService {
       ])
 
       const companyId = AdminDatabaseService.getLastInsertId()
+      Logger.debug('Company inserted', { companyId })
       
       if (!companyId) {
         throw new Error('Erreur lors de la création de l\'entreprise - ID non récupéré')
       }
 
       // Create default license
+      Logger.debug('Creating default license', { companyId, licenseType: companyData.licenseType || 'TRIAL' })
       await this.createDefaultLicense(companyId, companyData.licenseType || 'TRIAL')
 
       // Log audit
@@ -170,6 +169,8 @@ export class CompanyService {
 
       // Return company with credentials (password will be shown only once)
       const createdCompany = await this.getCompany(companyId)
+      Logger.success('Company created successfully', { companyId, name: createdCompany.name })
+      
       return {
         ...createdCompany,
         credentials: {
@@ -178,7 +179,7 @@ export class CompanyService {
         }
       }
     } catch (error) {
-      console.error('❌ Error creating company:', error)
+      Logger.error('Error creating company', { error: error.message, stack: error.stack })
       
       // Handle specific SQLite errors
       if (error.message && error.message.includes('UNIQUE constraint failed: companies.email')) {
