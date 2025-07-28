@@ -14,8 +14,9 @@ export class SystemSettings {
   }
 
   async loadSettings() {
-    // TODO: Load settings from admin API
-    this.settings = {
+    try {
+      // TODO: Load settings from admin API
+      this.settings = {
       general: {
         appName: 'SamaFacture',
         appVersion: '1.0.0',
@@ -49,6 +50,45 @@ export class SystemSettings {
         backupFrequency: 'daily',
         retentionDays: 30,
         lastBackup: '2024-01-25 02:00:00'
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error)
+      // Default settings in case of error
+      this.settings = {
+        general: {
+          appName: 'SamaFacture',
+          appVersion: '1.0.0',
+          defaultLanguage: 'fr',
+          defaultCurrency: 'XOF',
+          defaultTaxRate: 18,
+          maintenanceMode: false
+        },
+        license: {
+          trialDuration: 30,
+          basicMaxInvoices: 100,
+          premiumMaxInvoices: 1000,
+          autoRenewal: true
+        },
+        email: {
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUser: '',
+          smtpPassword: '',
+          fromEmail: '',
+          fromName: 'SamaFacture Admin'
+        },
+        security: {
+          sessionTimeout: 3600,
+          maxLoginAttempts: 5,
+          passwordMinLength: 8,
+          requireTwoFactor: false
+        },
+        backup: {
+          autoBackup: true,
+          backupFrequency: 'daily',
+          retentionDays: 30,
+          lastBackup: null
+        }
       }
     }
   }
@@ -124,6 +164,11 @@ export class SystemSettings {
     alert('Fonctionnalité à implémenter : Tester la configuration email')
   }
 
+  // Helper method to safely get setting values
+  getSetting(category, setting, defaultValue = '') {
+    return this.settings?.[category]?.[setting] ?? defaultValue
+  }
+
   async render() {
     return `
       <div class="space-y-6">
@@ -158,17 +203,17 @@ export class SystemSettings {
             <div class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom de l'application</label>
-                <input type="text" class="setting-input form-input" data-category="general" data-setting="appName" value="${this.settings.general.appName}">
+                <input type="text" class="setting-input form-input" data-category="general" data-setting="appName" value="${this.getSetting('general', 'appName', 'SamaFacture')}">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Version</label>
-                <input type="text" class="setting-input form-input" data-category="general" data-setting="appVersion" value="${this.settings.general.appVersion}" readonly>
+                <input type="text" class="setting-input form-input" data-category="general" data-setting="appVersion" value="${this.getSetting('general', 'appVersion', '1.0.0')}" readonly>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Langue par défaut</label>
                 <select class="setting-input form-select" data-category="general" data-setting="defaultLanguage">
-                  <option value="fr" ${this.settings.general.defaultLanguage === 'fr' ? 'selected' : ''}>Français</option>
-                  <option value="en" ${this.settings.general.defaultLanguage === 'en' ? 'selected' : ''}>English</option>
+                  <option value="fr" ${this.getSetting('general', 'defaultLanguage', 'fr') === 'fr' ? 'selected' : ''}>Français</option>
+                  <option value="en" ${this.getSetting('general', 'defaultLanguage', 'fr') === 'en' ? 'selected' : ''}>English</option>
                 </select>
               </div>
               <div>

@@ -15,14 +15,15 @@ export class GlobalStats {
   }
 
   async loadStats() {
-    // TODO: Load stats from admin API
-    this.stats = {
-      totalCompanies: 15,
-      activeCompanies: 12,
-      totalRevenue: 2450000,
-      totalInvoices: 1250,
-      averageRevenuePerCompany: 163333,
-      monthlyGrowth: 12.5,
+    try {
+      // TODO: Load stats from admin API
+      this.stats = {
+        totalCompanies: 15,
+        activeCompanies: 12,
+        totalRevenue: 2450000,
+        totalInvoices: 1250,
+        averageRevenuePerCompany: 163333,
+        monthlyGrowth: 12.5,
       topCompanies: [
         { name: 'Entreprise Alpha', revenue: 450000, invoices: 180 },
         { name: 'Entreprise Beta', revenue: 380000, invoices: 145 },
@@ -42,6 +43,24 @@ export class GlobalStats {
         trial: 3,
         basic: 7,
         premium: 5
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error)
+      // Default values in case of error
+      this.stats = {
+        totalCompanies: 0,
+        activeCompanies: 0,
+        totalRevenue: 0,
+        totalInvoices: 0,
+        averageRevenuePerCompany: 0,
+        monthlyGrowth: 0,
+        topCompanies: [],
+        monthlyData: [],
+        licenseDistribution: {
+          trial: 0,
+          basic: 0,
+          premium: 0
+        }
       }
     }
   }
@@ -121,7 +140,7 @@ export class GlobalStats {
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600 dark:text-gray-400">CA Total</p>
-                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${this.stats.totalRevenue.toLocaleString()} €</p>
+                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${(this.stats.totalRevenue || 0).toLocaleString()} XOF</p>
                 <p class="text-sm text-green-600 dark:text-green-400">+${this.stats.monthlyGrowth}% ce mois</p>
               </div>
             </div>
@@ -151,7 +170,7 @@ export class GlobalStats {
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600 dark:text-gray-400">CA Moyen</p>
-                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${this.stats.averageRevenuePerCompany.toLocaleString()} €</p>
+                <p class="text-2xl font-semibold text-gray-900 dark:text-white">${(this.stats.averageRevenuePerCompany || 0).toLocaleString()} XOF</p>
                 <p class="text-sm text-gray-600 dark:text-gray-400">Par entreprise</p>
               </div>
             </div>
