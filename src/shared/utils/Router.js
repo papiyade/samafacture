@@ -21,8 +21,12 @@ export class Router {
     // Handle initial load
     this.handleRoute()
 
-    // Handle browser back/forward
+    // Handle browser back/forward and hash changes
     window.addEventListener('popstate', () => {
+      this.handleRoute()
+    })
+    
+    window.addEventListener('hashchange', () => {
       this.handleRoute()
     })
 
@@ -37,14 +41,19 @@ export class Router {
   }
 
   navigate(path) {
-    if (path !== window.location.pathname) {
-      window.history.pushState({}, '', path)
+    // Use hash-based navigation for SPA
+    const newHash = '#' + path
+    if (newHash !== window.location.hash) {
+      window.location.hash = newHash
     }
     this.handleRoute()
   }
 
   async handleRoute() {
-    const path = window.location.pathname
+    // Use hash for SPA routing, fallback to pathname
+    let path = window.location.hash.slice(1) || '/'
+    if (path === '') path = '/'
+    
     const route = this.findRoute(path)
 
     if (route) {
@@ -122,6 +131,11 @@ export class Router {
         if (typeof this.currentPage.init === 'function') {
           await this.currentPage.init()
         }
+        
+        // Call afterRender if it exists (critical for event listeners)
+        if (typeof this.currentPage.afterRender === 'function') {
+          await this.currentPage.afterRender()
+        }
       }
 
       // Hide loading state
@@ -180,4 +194,3 @@ export class Router {
     }
   }
 }
-

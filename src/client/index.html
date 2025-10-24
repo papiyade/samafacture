@@ -37,17 +37,330 @@
     </div>
 
     <!-- App Container -->
-    <div id="app" class="hidden min-h-screen">
-        <!-- Navigation will be injected here -->
-        <nav id="navigation"></nav>
+    <div id="app" class="hidden min-h-screen flex">
+        <!-- Sidebar Navigation -->
+        <nav class="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto z-30">
+            <div class="p-6">
+                <div class="flex items-center space-x-3 mb-8">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">SF</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">SamaFacture</h1>
+                </div>
+                
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" data-page="dashboard" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-100 text-blue-700 border-blue-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"></path>
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="clients" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            <span>Clients</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="invoices" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Factures</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="quotes" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Devis</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="products" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                            <span>Produits</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="expenses" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            <span>Dépenses</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="settings" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span>Paramètres</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-page="license" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"></path>
+                            </svg>
+                            <span>Licence</span>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Theme Toggle Button -->
+                <div class="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button id="theme-toggle" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors w-full" title="Basculer le thème">
+                        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                        </svg>
+                        <span>Thème</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
         
         <!-- Main Content -->
-        <main id="main-content" class="transition-all duration-300">
+        <main id="main-content" class="flex-1 overflow-auto ml-64">
             <!-- Page content will be injected here -->
         </main>
         
         <!-- Modals Container -->
-        <div id="modals-container"></div>
+        <div id="modals-container">
+            <!-- Invoice Form Modal -->
+            <div id="invoice-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Nouvelle Facture</h3>
+                        <button onclick="window.hideModal('invoice-modal')" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="invoice-form-content">
+                        <form id="invoice-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Client *</label>
+                                    <select id="invoice-client" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Sélectionner un client</option>
+                                    </select>
+                                    <div id="invoice-client-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Date *</label>
+                                    <input type="date" id="invoice-date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <div id="invoice-date-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Date d'échéance</label>
+                                    <input type="date" id="invoice-due-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Statut</label>
+                                    <select id="invoice-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="draft">Brouillon</option>
+                                        <option value="sent">Envoyée</option>
+                                        <option value="paid">Payée</option>
+                                        <option value="overdue">En retard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Articles</label>
+                                    <button type="button" onclick="window.addInvoiceItem()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        + Ajouter un article
+                                    </button>
+                                </div>
+                                <div id="invoice-items" class="space-y-2">
+                                    <!-- Items will be added dynamically -->
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Sous-total</label>
+                                    <input type="number" id="invoice-subtotal" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">TVA (%)</label>
+                                    <input type="number" id="invoice-tax-rate" value="18" min="0" max="100" step="0.01" onchange="window.calculateInvoiceTotal()" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Total</label>
+                                    <input type="number" id="invoice-total" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm font-semibold">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                                <textarea id="invoice-notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" onclick="window.hideModal('invoice-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                                    Annuler
+                                </button>
+                                <button type="submit" id="invoice-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quote Form Modal -->
+            <div id="quote-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Nouveau Devis</h3>
+                        <button onclick="window.hideModal('quote-modal')" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="quote-form-content">
+                        <form id="quote-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Client *</label>
+                                    <select id="quote-client" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Sélectionner un client</option>
+                                    </select>
+                                    <div id="quote-client-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Date *</label>
+                                    <input type="date" id="quote-date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <div id="quote-date-error" class="hidden text-red-600 text-sm mt-1"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Valide jusqu'au</label>
+                                    <input type="date" id="quote-valid-until" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Statut</label>
+                                    <select id="quote-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="draft">Brouillon</option>
+                                        <option value="sent">Envoyé</option>
+                                        <option value="accepted">Accepté</option>
+                                        <option value="rejected">Rejeté</option>
+                                        <option value="expired">Expiré</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-sm font-medium text-gray-700">Articles</label>
+                                    <button type="button" onclick="window.addQuoteItem()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        + Ajouter un article
+                                    </button>
+                                </div>
+                                <div id="quote-items" class="space-y-2">
+                                    <!-- Items will be added dynamically -->
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Sous-total</label>
+                                    <input type="number" id="quote-subtotal" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">TVA (%)</label>
+                                    <input type="number" id="quote-tax-rate" value="18" min="0" max="100" step="0.01" onchange="window.calculateQuoteTotal()" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Total</label>
+                                    <input type="number" id="quote-total" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm font-semibold">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Notes</label>
+                                <textarea id="quote-notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                            
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" onclick="window.hideModal('quote-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                                    Annuler
+                                </button>
+                                <button type="submit" id="quote-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Form Modal -->
+            <div id="client-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Nouveau Client</h3>
+                        <button onclick="window.hideModal('client-modal')" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="client-form-content">
+                        <form id="client-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Nom complet *</label>
+                                <input type="text" id="client-name" data-field="name" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <div id="client-name-error" class="hidden text-red-600 text-sm mt-1"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Email *</label>
+                                <input type="email" id="client-email" data-field="email" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <div id="client-email-error" class="hidden text-red-600 text-sm mt-1"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Téléphone</label>
+                                <input type="tel" id="client-phone" data-field="phone" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <div id="client-phone-error" class="hidden text-red-600 text-sm mt-1"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Entreprise</label>
+                                <input type="text" id="client-company" data-field="company" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Adresse</label>
+                                <textarea id="client-address" data-field="address" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3 pt-4">
+                                <button type="button" onclick="window.hideModal('client-modal')" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">
+                                    Annuler
+                                </button>
+                                <button type="submit" id="client-submit-btn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Notifications Container -->
         <div id="notifications-container" class="fixed top-4 right-4 z-50"></div>
@@ -67,4 +380,3 @@
     <script type="module" src="./main.js"></script>
 </body>
 </html>
-

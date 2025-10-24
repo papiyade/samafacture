@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Création d'entreprise</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .logs {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+        }
+        .log-error { color: red; font-weight: bold; }
+        .log-success { color: green; font-weight: bold; }
+        .log-info { color: blue; }
+        .log-debug { color: gray; }
+        .log-warn { color: orange; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test - Création d'entreprise SamaFacture</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Tests disponibles</h3>
+            <button onclick="testDatabaseInit()">1. Test initialisation DB</button>
+            <button onclick="testCredentialGeneration()">2. Test génération identifiants</button>
+            <button onclick="testCompanyCreation()">3. Test création entreprise</button>
+            <button onclick="testCompanyList()">4. Test liste entreprises</button>
+            <button onclick="clearLogs()">🗑️ Vider les logs</button>
+            <button onclick="exportLogs()">📥 Exporter les logs</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Résultats des tests</h3>
+            <div id="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Logs détaillés</h3>
+            <div id="logs" class="logs"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AdminDatabaseService } from '../services/AdminDatabaseService.js'
+        import { CompanyService } from '../services/CompanyService.js'
+        import { CredentialGenerator } from '../utils/CredentialGenerator.js'
+        import { Logger } from '../utils/Logger.js'
+
+        // Make functions global for button onclick
+        window.testDatabaseInit = testDatabaseInit
+        window.testCredentialGeneration = testCredentialGeneration
+        window.testCompanyCreation = testCompanyCreation
+        window.testCompanyList = testCompanyList
+        window.clearLogs = clearLogs
+        window.exportLogs = exportLogs
+
+        // Setup log display
+        const originalLog = Logger.log
+        Logger.log = function(level, message, data) {
+            originalLog.call(this, level, message, data)
+            displayLog(level, message, data)
+        }
+
+        function displayLog(level, message, data) {
+            const logsDiv = document.getElementById('logs')
+            const logEntry = document.createElement('div')
+            logEntry.className = `log-entry log-${level.toLowerCase()}`
+            
+            const timestamp = new Date().toLocaleTimeString()
+            const dataStr = data ? ` | ${JSON.stringify(data)}` : ''
+            logEntry.textContent = `[${level}] ${timestamp} - ${message}${dataStr}`
+            
+            logsDiv.appendChild(logEntry)
+            logsDiv.scrollTop = logsDiv.scrollHeight
+        }
+
+        function showResult(testName, success, message, details = null) {
+            const resultsDiv = document.getElementById('test-results')
+            const resultDiv = document.createElement('div')
+            resultDiv.className = `test-section ${success ? 'success' : 'error'}`
+            
+            let content = `<h4>${success ? '✅' : '❌'} ${testName}</h4><p>${message}</p>`
+            if (details) {
+                content += `<pre>${JSON.stringify(details, null, 2)}</pre>`
+            }
+            
+            resultDiv.innerHTML = content
+            resultsDiv.appendChild(resultDiv)
+        }
+
+        async function testDatabaseInit() {
+            try {
+                Logger.info('Starting database initialization test')
+                
+                // Clear any existing database
+                localStorage.removeItem('samafacture_admin_db')
+                
+                await AdminDatabaseService.init()
+                
+                showResult('Initialisation Base de Données', true, 'Base de données initialisée avec succès')
+                Logger.success('Database initialization test passed')
+                
+            } catch (error) {
+                showResult('Initialisation Base de Données', false, `Erreur: ${error.message}`, error)
+                Logger.error('Database initialization test failed', error)
+            }
+        }
+
+        async function testCredentialGeneration() {
+            try {
+                Logger.info('Starting credential generation test')
+                
+                const credentials = await CredentialGenerator.generateCredentials(
+                    'Test Company',
+                    ['testuser1', 'testuser2'],
+                    false
+                )
+                
+                if (!credentials.username || !credentials.password || !credentials.passwordHash) {
+                    throw new Error('Credentials incomplete')
+                }
+                
+                // Test password verification
+                const isValid = await CredentialGenerator.verifyPassword(credentials.password, credentials.passwordHash)
+                if (!isValid) {
+                    throw new Error('Password verification failed')
+                }
+                
+                showResult('Génération Identifiants', true, 'Identifiants générés et vérifiés avec succès', {
+                    username: credentials.username,
+                    passwordLength: credentials.password.length,
+                    hashLength: credentials.passwordHash.length
+                })
+                Logger.success('Credential generation test passed')
+                
+            } catch (error) {
+                showResult('Génération Identifiants', false, `Erreur: ${error.message}`, error)
+                Logger.error('Credential generation test failed', error)
+            }
+        }
+
+        async function testCompanyCreation() {
+            try {
+                Logger.info('Starting company creation test')
+                
+                // Ensure database is initialized
+                if (!AdminDatabaseService.isInitialized) {
+                    await AdminDatabaseService.init()
+                }
+                
+                const testCompanyData = {
+                    name: 'Entreprise Test ' + Date.now(),
+                    email: `test${Date.now()}@example.com`,
+                    phone: '+221 77 123 45 67',
+                    address: '123 Rue Test',
+                    city: 'Dakar',
+                    postal_code: '12345',
+                    country: 'Sénégal',
+                    business_type: 'Commerce',
+                    currency: 'XOF',
+                    tax_rate: 18.0,
+                    licenseType: 'TRIAL'
+                }
+                
+                Logger.info('Creating test company', testCompanyData)
+                const result = await CompanyService.createCompany(testCompanyData)
+                
+                if (!result || !result.id || !result.credentials) {
+                    throw new Error('Company creation returned invalid result')
+                }
+                
+                showResult('Création Entreprise', true, 'Entreprise créée avec succès', {
+                    id: result.id,
+                    name: result.name,
+                    email: result.email,
+                    username: result.credentials.username,
+                    hasPassword: !!result.credentials.password
+                })
+                Logger.success('Company creation test passed', { companyId: result.id })
+                
+            } catch (error) {
+                showResult('Création Entreprise', false, `Erreur: ${error.message}`, error)
+                Logger.error('Company creation test failed', error)
+            }
+        }
+
+        async function testCompanyList() {
+            try {
+                Logger.info('Starting company list test')
+                
+                // Ensure database is initialized
+                if (!AdminDatabaseService.isInitialized) {
+                    await AdminDatabaseService.init()
+                }
+                
+                const companies = await CompanyService.getAllCompanies()
+                
+                showResult('Liste Entreprises', true, `${companies.length} entreprise(s) trouvée(s)`, {
+                    count: companies.length,
+                    companies: companies.map(c => ({ id: c.id, name: c.name, email: c.email, status: c.status }))
+                })
+                Logger.success('Company list test passed', { count: companies.length })
+                
+            } catch (error) {
+                showResult('Liste Entreprises', false, `Erreur: ${error.message}`, error)
+                Logger.error('Company list test failed', error)
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = ''
+            document.getElementById('test-results').innerHTML = ''
+            Logger.clearLogs()
+        }
+
+        function exportLogs() {
+            Logger.exportLogs()
+        }
+
+        // Auto-run database init on page load
+        window.addEventListener('load', () => {
+            Logger.info('Test page loaded')
+        })
+    </script>
+</body>
+</html>

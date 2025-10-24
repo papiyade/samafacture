@@ -1,331 +1,494 @@
+import { AnalyticsService } from '../../shared/services/AnalyticsService.js'
+import { ChartService } from '../../shared/services/ChartService.js'
 import { DatabaseService } from '../../shared/services/DatabaseService.js'
 
+/**
+ * Dashboard Page - Analytics et KPIs
+ */
 export class Dashboard {
   constructor() {
-    this.element = null
+    this.container = null
+    this.kpis = null
+    this.dateRange = {
+      startDate: null,
+      endDate: null,
+      period: 'month' // month, quarter, year, custom
+    }
+  }
+
+  async init() {
+    await ChartService.init()
+    await this.loadData()
+    console.log('✅ Dashboard page initialized')
+  }
+
+  async loadData() {
+    try {
+      // Set default date range (current month)
+      if (!this.dateRange.startDate) {
+        const now = new Date()
+        this.dateRange.startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        this.dateRange.endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      }
+
+      this.kpis = AnalyticsService.getKPIs(this.dateRange.startDate, this.dateRange.endDate)
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+    }
   }
 
   async render() {
-    // Initialize database if not already done
-    if (!DatabaseService.isInitialized) {
-      await DatabaseService.init()
-    }
-
-    // Get real statistics from database
-    const stats = await this.getStats()
+    await this.loadData()
     
-    this.element = document.createElement('div')
-    this.element.className = 'p-6'
-    this.element.innerHTML = `
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tableau de bord</h1>
-        <p class="text-gray-600 dark:text-gray-400">Bienvenue sur SamaFacture</p>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        ${this.renderStatsCard('Chiffre d\'affaires', stats.totalRevenue, 'XOF', 'text-green-600', `
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-          </svg>
-        `)}
-        
-        ${this.renderStatsCard('Factures', stats.totalInvoices, '', 'text-blue-600', `
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-        `)}
-        
-        ${this.renderStatsCard('Clients', stats.totalClients, '', 'text-purple-600', `
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-          </svg>
-        `)}
-        
-        ${this.renderStatsCard('En attente', stats.pendingAmount, 'XOF', 'text-orange-600', `
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-        `)}
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <button class="quick-action-btn bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-lg shadow transition-colors" data-action="new-invoice">
-          <div class="flex items-center">
-            <svg class="w-8 h-8 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            <div class="text-left">
-              <div class="font-semibold">Nouvelle facture</div>
-              <div class="text-sm opacity-90">Créer une facture rapidement</div>
+    this.container = document.createElement('div')
+    this.container.className = 'p-6'
+    this.container.innerHTML = `
+      <div class="dashboard-page">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Tableau de Bord</h1>
+            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Vue d'ensemble de vos performances commerciales
+            </p>
+          </div>
+          <div class="mt-4 sm:mt-0">
+            <div class="flex space-x-2">
+              <select id="period-selector" class="input-field">
+                <option value="month">Ce mois</option>
+                <option value="quarter">Ce trimestre</option>
+                <option value="year">Cette année</option>
+                <option value="custom">Période personnalisée</option>
+              </select>
+              <button id="refresh-btn" class="btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </button>
             </div>
-          </div>
-        </button>
-
-        <button class="quick-action-btn bg-green-600 hover:bg-green-700 text-white p-6 rounded-lg shadow transition-colors" data-action="new-quote">
-          <div class="flex items-center">
-            <svg class="w-8 h-8 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <div class="text-left">
-              <div class="font-semibold">Nouveau devis</div>
-              <div class="text-sm opacity-90">Créer un devis rapidement</div>
-            </div>
-          </div>
-        </button>
-
-        <button class="quick-action-btn bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-lg shadow transition-colors" data-action="new-client">
-          <div class="flex items-center">
-            <svg class="w-8 h-8 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-            <div class="text-left">
-              <div class="font-semibold">Nouveau client</div>
-              <div class="text-sm opacity-90">Ajouter un client</div>
-            </div>
-          </div>
-        </button>
-      </div>
-
-      <!-- Charts and Recent Activity -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Recent Invoices -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Factures récentes</h3>
-            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.app.navigate('invoices')">
-              Voir tout
-            </button>
-          </div>
-          <div id="recent-invoices">
-            <!-- Recent invoices will be loaded here -->
           </div>
         </div>
 
-        <!-- Recent Clients -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Clients récents</h3>
-            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" onclick="window.app.navigate('clients')">
-              Voir tout
+        <!-- Custom Date Range (hidden by default) -->
+        <div id="custom-date-range" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div class="flex flex-col sm:flex-row sm:items-end space-y-4 sm:space-y-0 sm:space-x-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Date début
+              </label>
+              <input type="date" id="custom-start-date" class="input-field">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Date fin
+              </label>
+              <input type="date" id="custom-end-date" class="input-field">
+            </div>
+            <button id="apply-custom-range" class="btn-primary">
+              Appliquer
             </button>
           </div>
-          <div id="recent-clients">
-            <!-- Recent clients will be loaded here -->
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          ${this.renderKPICard('Chiffre d\'Affaires', this.kpis?.totalRevenue || 0, 'revenue', 'green', 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1')}
+          ${this.renderKPICard('Dépenses', this.kpis?.totalExpenses || 0, 'expenses', 'red', 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z')}
+          ${this.renderKPICard('Bénéfice Net', this.kpis?.netProfit || 0, 'profit', this.kpis?.netProfit >= 0 ? 'green' : 'red', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z')}
+          ${this.renderKPICard('Factures', this.kpis?.invoiceCount || 0, 'invoices', 'blue', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', false)}
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <!-- Revenue Evolution Chart -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">Évolution Mensuelle</h3>
+              <div class="flex space-x-2">
+                <div class="flex items-center">
+                  <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Revenus</span>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                  <span class="text-sm text-gray-600 dark:text-gray-400">Dépenses</span>
+                </div>
+              </div>
+            </div>
+            <div class="h-64">
+              <canvas id="evolution-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Payment Status Chart -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Statut des Paiements</h3>
+            <div class="h-64">
+              <canvas id="payment-status-chart"></canvas>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Status Overview -->
-      <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Aperçu des statuts</h3>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-gray-600">${stats.draftInvoices}</div>
-            <div class="text-sm text-gray-500">Brouillons</div>
+        <!-- Charts Row 2 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <!-- Expenses by Category -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Dépenses par Catégorie</h3>
+            <div class="h-64">
+              <canvas id="expenses-category-chart"></canvas>
+            </div>
           </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-blue-600">${stats.pendingInvoices}</div>
-            <div class="text-sm text-gray-500">En attente</div>
+
+          <!-- Top Clients -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Top Clients</h3>
+            <div class="space-y-4" id="top-clients-list">
+              ${this.renderTopClients()}
+            </div>
           </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-green-600">${stats.paidInvoices}</div>
-            <div class="text-sm text-gray-500">Payées</div>
+        </div>
+
+        <!-- Statistics Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Recent Invoices -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">Factures Récentes</h3>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4" id="recent-invoices">
+                ${this.renderRecentInvoices()}
+              </div>
+            </div>
           </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-purple-600">${stats.totalProducts}</div>
-            <div class="text-sm text-gray-500">Produits</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-orange-600">${DatabaseService.getQuotes().length}</div>
-            <div class="text-sm text-gray-500">Devis</div>
+
+          <!-- Recent Expenses -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">Dépenses Récentes</h3>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4" id="recent-expenses">
+                ${this.renderRecentExpenses()}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     `
-
-    // Add event listeners for quick actions
-    this.element.querySelectorAll('.quick-action-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const action = e.currentTarget.dataset.action
-        this.handleQuickAction(action)
-      })
-    })
-
-    // Load recent data
-    await this.loadRecentInvoices()
-    await this.loadRecentClients()
     
-    return this.element
+    this.attachEventListeners()
+    return this.container
   }
 
-  handleQuickAction(action) {
-    switch (action) {
-      case 'new-invoice':
-        window.app.navigate('invoices', { action: 'new' })
-        break
-      case 'new-quote':
-        window.app.navigate('quotes', { action: 'new' })
-        break
-      case 'new-client':
-        window.app.navigate('clients', { action: 'new' })
-        break
-    }
-  }
-
-  renderStatsCard(title, value, suffix, colorClass, icon) {
-    const formattedValue = suffix === 'XOF' 
-      ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(value)
-      : new Intl.NumberFormat('fr-FR').format(value)
+  renderKPICard(title, value, type, color, iconPath, isCurrency = true) {
+    const trends = AnalyticsService.getTrends(this.dateRange.startDate, this.dateRange.endDate)
+    const trend = trends[type]
+    const trendValue = trend?.trend || 0
+    const isPositive = trendValue >= 0
+    const trendColor = (type === 'expenses') ? (isPositive ? 'red' : 'green') : (isPositive ? 'green' : 'red')
 
     return `
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div class="flex items-center">
           <div class="flex-shrink-0">
-            <div class="${colorClass}">
-              ${icon}
+            <div class="w-8 h-8 bg-${color}-100 dark:bg-${color}-900/20 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-${color}-600 dark:text-${color}-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconPath}"></path>
+              </svg>
             </div>
           </div>
-          <div class="ml-5 w-0 flex-1">
-            <dl>
-              <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                ${title}
-              </dt>
-              <dd class="text-lg font-medium text-gray-900 dark:text-white">
-                ${formattedValue}${suffix && suffix !== 'XOF' ? ' ' + suffix : ''}
-              </dd>
-            </dl>
+          <div class="ml-4 flex-1">
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">${title}</p>
+            <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+              ${isCurrency ? this.formatCurrency(value) : value.toLocaleString('fr-FR')}
+            </p>
+            ${trend ? `
+              <div class="flex items-center mt-1">
+                <svg class="w-4 h-4 text-${trendColor}-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="${isPositive ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6'}"></path>
+                </svg>
+                <span class="text-sm text-${trendColor}-600 dark:text-${trendColor}-400">
+                  ${Math.abs(trendValue).toFixed(1)}%
+                </span>
+              </div>
+            ` : ''}
           </div>
         </div>
       </div>
     `
   }
 
-  async getStats() {
-    return DatabaseService.getStats()
+  renderTopClients() {
+    const topClients = AnalyticsService.getTopClients(5, this.dateRange.startDate, this.dateRange.endDate)
+    
+    if (topClients.length === 0) {
+      return `
+        <div class="text-center py-8">
+          <p class="text-gray-500 dark:text-gray-400">Aucun client pour cette période</p>
+        </div>
+      `
+    }
+
+    return topClients.map((item, index) => `
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mr-3">
+            <span class="text-sm font-medium text-blue-600 dark:text-blue-400">${index + 1}</span>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">${item.client.name}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">${item.invoiceCount} facture(s)</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            ${this.formatCurrency(item.revenue)}
+          </p>
+        </div>
+      </div>
+    `).join('')
   }
 
-  async loadRecentInvoices() {
-    const container = this.element.querySelector('#recent-invoices')
+  renderRecentInvoices() {
     const invoices = DatabaseService.getInvoices()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5)
 
     if (invoices.length === 0) {
-      container.innerHTML = `
-        <div class="text-center py-4">
+      return `
+        <div class="text-center py-8">
           <p class="text-gray-500 dark:text-gray-400">Aucune facture récente</p>
-          <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="window.app.navigate('invoices', { action: 'new' })">
-            Créer votre première facture
-          </button>
         </div>
       `
-      return
     }
 
-    container.innerHTML = `
-      <div class="space-y-3">
-        ${invoices.map(invoice => {
-          const client = DatabaseService.getClient(invoice.client_id)
-          return `
-            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="window.app.navigate('invoices', { id: ${invoice.id} })">
-              <div class="flex-1">
-                <div class="flex items-center space-x-3">
-                  <div class="font-medium text-gray-900 dark:text-white">${invoice.number}</div>
-                  <div class="text-sm text-gray-500 dark:text-gray-400">${client ? client.name : 'Client supprimé'}</div>
-                </div>
-                <div class="text-sm text-gray-500 dark:text-gray-400">${new Date(invoice.date).toLocaleDateString('fr-FR')}</div>
-              </div>
-              <div class="text-right">
-                <div class="font-medium text-gray-900 dark:text-white">
-                  ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(invoice.total || 0)}
-                </div>
-                <div class="text-sm">
-                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${this.getStatusColor(invoice.status)}">
-                    ${this.getStatusLabel(invoice.status)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          `
-        }).join('')}
-      </div>
-    `
+    return invoices.map(invoice => {
+      const client = DatabaseService.getClients().find(c => c.id == invoice.client_id)
+      const statusColors = {
+        'paid': 'green',
+        'pending': 'yellow',
+        'overdue': 'red'
+      }
+      const statusLabels = {
+        'paid': 'Payée',
+        'pending': 'En attente',
+        'overdue': 'En retard'
+      }
+
+      return `
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">${invoice.number}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              ${client?.name || 'Client supprimé'} • ${new Date(invoice.date).toLocaleDateString('fr-FR')}
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-900 dark:text-white">
+              ${this.formatCurrency(invoice.total)}
+            </p>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${statusColors[invoice.status]}-100 text-${statusColors[invoice.status]}-800 dark:bg-${statusColors[invoice.status]}-900/20 dark:text-${statusColors[invoice.status]}-400">
+              ${statusLabels[invoice.status] || invoice.status}
+            </span>
+          </div>
+        </div>
+      `
+    }).join('')
   }
 
-  async loadRecentClients() {
-    const container = this.element.querySelector('#recent-clients')
-    const clients = DatabaseService.getClients()
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  renderRecentExpenses() {
+    const expenses = DatabaseService.getExpenses()
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5)
 
-    if (clients.length === 0) {
-      container.innerHTML = `
-        <div class="text-center py-4">
-          <p class="text-gray-500 dark:text-gray-400">Aucun client récent</p>
-          <button class="mt-2 text-blue-600 hover:text-blue-800 text-sm" onclick="window.app.navigate('clients', { action: 'new' })">
-            Ajouter votre premier client
-          </button>
+    if (expenses.length === 0) {
+      return `
+        <div class="text-center py-8">
+          <p class="text-gray-500 dark:text-gray-400">Aucune dépense récente</p>
         </div>
       `
+    }
+
+    return expenses.map(expense => `
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            ${expense.description || 'Sans description'}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            ${expense.category || 'Autres'} • ${new Date(expense.date).toLocaleDateString('fr-FR')}
+          </p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            ${this.formatCurrency(expense.amount)}
+          </p>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  async attachEventListeners() {
+    // Period selector
+    const periodSelector = document.getElementById('period-selector')
+    if (periodSelector) {
+      periodSelector.addEventListener('change', (e) => this.changePeriod(e.target.value))
+    }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refresh-btn')
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => this.refresh())
+    }
+
+    // Custom date range
+    const applyCustomBtn = document.getElementById('apply-custom-range')
+    if (applyCustomBtn) {
+      applyCustomBtn.addEventListener('click', () => this.applyCustomDateRange())
+    }
+
+    // Load charts after DOM is ready
+    setTimeout(() => this.loadCharts(), 100)
+  }
+
+  changePeriod(period) {
+    const now = new Date()
+    const customDateRange = document.getElementById('custom-date-range')
+
+    switch (period) {
+      case 'month':
+        this.dateRange.startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        this.dateRange.endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        customDateRange?.classList.add('hidden')
+        break
+      case 'quarter':
+        const quarter = Math.floor(now.getMonth() / 3)
+        this.dateRange.startDate = new Date(now.getFullYear(), quarter * 3, 1)
+        this.dateRange.endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0)
+        customDateRange?.classList.add('hidden')
+        break
+      case 'year':
+        this.dateRange.startDate = new Date(now.getFullYear(), 0, 1)
+        this.dateRange.endDate = new Date(now.getFullYear(), 11, 31)
+        customDateRange?.classList.add('hidden')
+        break
+      case 'custom':
+        customDateRange?.classList.remove('hidden')
+        return // Don't refresh yet, wait for custom dates
+    }
+
+    this.dateRange.period = period
+    this.refresh()
+  }
+
+  applyCustomDateRange() {
+    const startDate = document.getElementById('custom-start-date')?.value
+    const endDate = document.getElementById('custom-end-date')?.value
+
+    if (startDate && endDate) {
+      this.dateRange.startDate = new Date(startDate)
+      this.dateRange.endDate = new Date(endDate)
+      this.dateRange.period = 'custom'
+      this.refresh()
+    }
+  }
+
+  async refresh() {
+    await this.loadData()
+    
+    // Update the entire page content
+    if (this.container) {
+      this.container.innerHTML = this.render()
+      this.attachEventListeners()
+    }
+  }
+
+  async loadCharts() {
+    try {
+      await this.loadEvolutionChart()
+      await this.loadPaymentStatusChart()
+      await this.loadExpensesCategoryChart()
+    } catch (error) {
+      console.error('Error loading charts:', error)
+    }
+  }
+
+  async loadEvolutionChart() {
+    const evolutionData = AnalyticsService.getMonthlyEvolution(12)
+    
+    const chartData = {
+      labels: evolutionData.map(d => d.month),
+      datasets: [
+        {
+          label: 'Revenus',
+          data: evolutionData.map(d => d.revenue),
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          fill: true
+        },
+        {
+          label: 'Dépenses',
+          data: evolutionData.map(d => d.expenses),
+          borderColor: '#EF4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          fill: true
+        }
+      ]
+    }
+
+    ChartService.createLineChart('evolution-chart', chartData)
+  }
+
+  async loadPaymentStatusChart() {
+    const paymentStats = AnalyticsService.getPaymentStats(this.dateRange.startDate, this.dateRange.endDate)
+    
+    const chartData = {
+      labels: ['Payées', 'En attente', 'En retard'],
+      values: [paymentStats.paid.amount, paymentStats.pending.amount, paymentStats.overdue.amount],
+      colors: ['#10B981', '#F59E0B', '#EF4444']
+    }
+
+    ChartService.createDoughnutChart('payment-status-chart', chartData)
+  }
+
+  async loadExpensesCategoryChart() {
+    const expensesByCategory = AnalyticsService.getExpensesByCategory(this.dateRange.startDate, this.dateRange.endDate)
+    
+    if (expensesByCategory.length === 0) {
+      // Show empty state
+      const canvas = document.getElementById('expenses-category-chart')
+      if (canvas) {
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = '#9CA3AF'
+        ctx.font = '14px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText('Aucune dépense pour cette période', canvas.width / 2, canvas.height / 2)
+      }
       return
     }
 
-    container.innerHTML = `
-      <div class="space-y-3">
-        ${clients.map(client => {
-          const invoices = DatabaseService.getInvoices().filter(inv => inv.client_id === client.id)
-          const totalAmount = invoices.reduce((sum, inv) => sum + (parseFloat(inv.total) || 0), 0)
-          
-          return `
-            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="window.app.navigate('clients', { id: ${client.id} })">
-              <div class="flex-1">
-                <div class="font-medium text-gray-900 dark:text-white">${client.name}</div>
-                <div class="text-sm text-gray-500 dark:text-gray-400">${client.email || client.company || 'Pas d\'email'}</div>
-              </div>
-              <div class="text-right">
-                <div class="font-medium text-gray-900 dark:text-white">
-                  ${invoices.length} facture${invoices.length > 1 ? 's' : ''}
-                </div>
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                  ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(totalAmount)}
-                </div>
-              </div>
-            </div>
-          `
-        }).join('')}
-      </div>
-    `
+    const chartData = {
+      labels: expensesByCategory.map(c => c.category),
+      values: expensesByCategory.map(c => c.amount)
+    }
+
+    ChartService.createDoughnutChart('expenses-category-chart', chartData)
   }
 
-  getStatusColor(status) {
-    const colors = {
-      draft: 'bg-gray-100 text-gray-800',
-      sent: 'bg-blue-100 text-blue-800',
-      paid: 'bg-green-100 text-green-800',
-      overdue: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-800'
+  formatCurrency(amount) {
+    const currency = DatabaseService.getSetting('currency') || 'XOF'
+    const currencySymbols = {
+      'XOF': 'FCFA',
+      'EUR': '€',
+      'USD': '$'
     }
-    return colors[status] || 'bg-gray-100 text-gray-800'
-  }
-
-  getStatusLabel(status) {
-    const labels = {
-      draft: 'Brouillon',
-      sent: 'Envoyée',
-      paid: 'Payée',
-      overdue: 'En retard',
-      cancelled: 'Annulée'
-    }
-    return labels[status] || status
+    return `${amount.toLocaleString('fr-FR')} ${currencySymbols[currency] || currency}`
   }
 
   destroy() {
-    if (this.element) {
-      this.element.remove()
-      this.element = null
-    }
+    ChartService.destroyAllCharts()
   }
 }
-
